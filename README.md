@@ -159,13 +159,14 @@ sistema. No se actualiza sola: `10-apps` baja el release nuevo en cada corrida.
 - `KUTRAL_OS=1`: modo equipo dedicado (wifi, brillo, volumen y apagado desde la app).
 - `WEBKIT_DISABLE_DMABUF_RENDERER=1`: evita la ventana en blanco de WebKitGTK en GPUs viejas.
 
-**LabNAS** (`apps/labnas.sh`): el equipo pasa a ser el servidor. El servidor va en `/opt/labnas`
-como servicio `labnas` (`http://<equipo>:3001`), con la unidad del README de LabNAS: corre con el
-usuario del kiosko, no root (mpv suena en su sesión, la terminal web abre su shell, ve su home),
-con `CAP_NET_RAW` y `CAP_NET_BIND_SERVICE`. Se instala una vez y después se actualiza desde su web. El kiosko muestra la UI con `labnas-viewer` (`/opt/labnas-viewer`, pantalla completa
-por regla de Openbox), que se actualiza en cada corrida. El servicio sigue activo aunque después se
-elija otra app. Ojo: el kiosko desactiva `cups` y `avahi`, así que la impresión de documentos de
-LabNAS no anda sin reactivarlos.
+**LabNAS** (`apps/labnas.sh`): el equipo pasa a ser el servidor, instalado con el `install.sh`
+oficial del release (`--user <usuario del kiosko>`): `/opt/labnas`, servicio `labnas` sin root con
+`CAP_NET_RAW` y `CAP_NET_BIND_SERVICE` (`http://<equipo>:3001`). Corre con el usuario del kiosko
+para que mpv suene en su sesión, la terminal web abra su shell y vea su home. Se instala una vez y
+después se actualiza desde su web. El kiosko muestra la UI con `labnas-viewer` (`/opt/labnas-viewer`,
+checksum verificado, pantalla completa por regla de Openbox), que se actualiza en cada corrida. El
+servicio sigue activo aunque después se elija otra app. Ojo: el kiosko desactiva `cups` y `avahi`,
+así que la impresión de documentos de LabNAS no anda sin reactivarlos.
 
 Lo que cualquier app recibe del kiosko:
 
