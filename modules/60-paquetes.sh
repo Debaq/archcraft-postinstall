@@ -12,8 +12,11 @@ fi
 pkg_install "${KEEP_PKGS[@]}"
 sudo pacman -D --asexplicit "${KEEP_PKGS[@]}" >/dev/null
 
+# Lo que se conserva no se quita aunque esté en REMOVE_PKGS (p. ej. dunst, que LabNAS usa para notificar)
+remove=()
+for p in "${REMOVE_PKGS[@]}"; do [[ " ${KEEP_PKGS[*]} " == *" $p "* ]] || remove+=("$p"); done
 mapfile -t by_pattern < <(for re in "${REMOVE_PATTERNS[@]}"; do pacman -Qq | grep -E "$re"; done)
-pkg_remove "${REMOVE_PKGS[@]}" "${by_pattern[@]}"
+pkg_remove "${remove[@]}" "${by_pattern[@]}"
 
 # GTK con el tema de fábrica (los de Archcraft ya no están)
 mkdir -p "$HOME/.config/gtk-3.0"

@@ -9,7 +9,9 @@ APP_PROC=labnas-viewer # nombre del proceso (pgrep -x)
 APP_DIR=/opt/labnas-viewer
 # webkit2gtk y gtk3: el visor. Opcionales del servidor (como su install.sh --deps, sin cups, que el
 # kiosko apaga): mpv y yt-dlp música y video, ffmpeg timelapse, rsync respaldos, smartmontools SMART.
-APP_PKGS=(webkit2gtk-4.1 gtk3 mpv yt-dlp ffmpeg rsync smartmontools)
+# dunst y libnotify: el visor avisa con notify-send (impresión terminada, respaldo fallido, descargas);
+# sin un daemon de notificaciones (el kiosko quita dunst) esos avisos se pierden.
+APP_PKGS=(webkit2gtk-4.1 gtk3 mpv yt-dlp ffmpeg rsync smartmontools dunst libnotify)
 APP_ENV=(
 	WEBKIT_DISABLE_DMABUF_RENDERER=1 # sin esto WebKitGTK queda en blanco en varias GPU viejas
 )
