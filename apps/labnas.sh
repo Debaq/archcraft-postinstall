@@ -53,7 +53,10 @@ app_install() {
 			if [[ -x "$LABNAS_SERVER/labnas-backend" ]] && systemctl is-active -q labnas.service; then
 				ok "Servidor LabNAS activo (install.sh terminó con error después de instalarlo)"
 			else
-				warn "No se pudo instalar el servidor LabNAS (journalctl -u labnas -n 50)"
+				# El motivo queda a la vista: estado del servicio y sus últimos mensajes
+				warn "No se pudo instalar el servidor LabNAS. Estado y log del servicio:"
+				{ systemctl status labnas.service --no-pager -n 0; sudo journalctl -u labnas.service -n 20 --no-pager; } 2>&1 |
+					sed 's/^/    /' || true
 				srv_ok=0
 			fi
 		fi
