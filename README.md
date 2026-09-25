@@ -50,6 +50,17 @@ módulos, se pasan partes de su nombre:
 cd archcraft-postinstall && git pull && ./postinstall.sh
 ```
 
+### Diagnóstico de audio
+
+Si un equipo queda sin sonido, con el usuario del kiosko (sin `sudo`):
+
+```bash
+cd archcraft-postinstall && git pull && ./diag-audio.sh
+```
+
+Deja `~/audio-<hostname>.txt` con la tarjeta, el driver, los paquetes de audio y el estado de
+PipeWire/WirePlumber.
+
 ## Cómo se usa el kiosko
 
 - **Al prender:** entra solo y abre LabSim en pantalla completa. No hay escritorio.
