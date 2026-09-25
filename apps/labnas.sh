@@ -22,7 +22,7 @@ LABNAS_SERVER=/opt/labnas
 
 # Instala o actualiza el visor en $1 (debe quedar $1/run.sh); el servidor, solo si falta.
 app_install() {
-	local dest="$1" rels tag="" url="" tmp
+	local dest="$1" rels tag="" url="" tmp srv_ok=1
 	rels="$(curl -fsSL "https://api.github.com/repos/$LABNAS_REPO/releases?per_page=30")" || {
 		[[ -x "$dest/labnas-viewer" && -x "$LABNAS_SERVER/labnas-backend" ]] && { warn "Sin red: LabNAS queda como está"; return 0; }
 		warn "No se pudo consultar los releases de LabNAS"
@@ -32,13 +32,25 @@ app_install() {
 	# Servidor: con el install.sh oficial (checksum, unidad sin root con CAP_NET_RAW y
 	# CAP_NET_BIND_SERVICE, ufw, espera a /api/health). Una vez instalado se actualiza desde su
 	# web; se reinstala solo si falta o si la unidad es la vieja que corría como root.
+	# Si el servidor falla, el visor igual se instala (el kiosko tiene qué abrir) y el módulo
+	# se marca fallido al final para reintentarlo en la próxima corrida.
 	if [[ -x "$LABNAS_SERVER/labnas-backend" ]] && grep -q "^User=$USER$" /etc/systemd/system/labnas.service 2>/dev/null; then
 		ok "Servidor LabNAS ya instalado en $LABNAS_SERVER (se actualiza solo)"
 	else
 		tmp="$(mktemp -d)"
-		curl -fsSL -o "$tmp/install.sh" "https://github.com/$LABNAS_REPO/releases/latest/download/install.sh" ||
-			{ warn "No se pudo bajar el install.sh de LabNAS"; rm -rf "$tmp"; return 1; }
-		sudo bash "$tmp/install.sh" --user "$USER" --dir "$LABNAS_SERVER" | sed 's/^/  /'
+		if ! curl -fsSL -o "$tmp/install.sh" "https://github.com/$LABNAS_REPO/releases/latest/download/install.sh"; then
+			warn "No se pudo bajar el install.sh de LabNAS"
+			srv_ok=0
+		# install.sh termina con error al mostrar la IP (usa hostname -I, que el de Arch no tiene)
+		# aunque ya dejó todo instalado: vale lo que quedó, no su código de salida.
+		elif ! sudo bash "$tmp/install.sh" --user "$USER" --dir "$LABNAS_SERVER" | sed 's/^/  /'; then
+			if [[ -x "$LABNAS_SERVER/labnas-backend" ]] && systemctl is-active -q labnas.service; then
+				ok "Servidor LabNAS activo (install.sh terminó con error después de instalarlo)"
+			else
+				warn "No se pudo instalar el servidor LabNAS (journalctl -u labnas -n 50)"
+				srv_ok=0
+			fi
+		fi
 		rm -rf "$tmp"
 	fi
 
@@ -49,7 +61,8 @@ app_install() {
 	[[ -n "${url:-}" ]] || { warn "Ningún release de LabNAS trae el visor (labnas-viewer-<tag>-linux-x86_64.tar.gz)"; return 1; }
 	if [[ -x "$dest/labnas-viewer" && "$(cat "$dest/VERSION" 2>/dev/null)" == "$tag" ]]; then
 		ok "Visor LabNAS $tag al día"
-		return 0
+		((srv_ok))
+		return
 	fi
 	tmp="$(mktemp -d)"
 	echo "  Descargando $url"
@@ -68,6 +81,7 @@ app_install() {
 	sudo mv "$tmp/labnas-viewer" "$dest"
 	rm -rf "$tmp"
 	ok "Visor LabNAS $tag instalado en $dest"
+	((srv_ok))
 }
 
 app_icon() { ls "$1"/assets/*.svg 2>/dev/null | head -1; }
