@@ -42,6 +42,13 @@ KEEP_PKGS=(
 	thunar thunar-volman thunar-archive-plugin xfce4-terminal atril nm-connection-editor
 	networkmanager "${AUDIO_PKGS[@]}"
 	xprintidle # relanzar.sh: reabre la app tras un rato sin uso
+	# Mantenimiento: git (el postinstall se actualiza con él), SSH y lo que usan los scripts.
+	# Explícitos para que "pacman -Rns" no se los lleve como dependencia de algo que se quita
+	# (git era dependencia de yay).
+	git openssh sudo curl jq rsync nano htop usbutils fzf pacman-contrib
+	# Fuentes: todas las que trae Archcraft (texto, íconos y emoji); no se quitan
+	archcraft-fonts noto-fonts noto-fonts-emoji adwaita-fonts terminus-font gsfonts
+	xorg-fonts-100dpi xorg-fonts-75dpi
 )
 
 # Paquetes que se eliminan si están instalados
@@ -64,9 +71,6 @@ REMOVE_PKGS=(
 	xorg-server-devel xorg-server-src xorg-server-xvfb noto-fonts-cjk
 	# Compilar (AUR): el kiosko no compila nada (~300 MB con gcc y sus dependencias)
 	gcc make autoconf automake bison patch pkgconf yay downgrade
-	# Fuentes que ninguna app usa: Nerd Fonts de Archcraft y las de mapa de bits de X (~190 MB).
-	# Menos fuentes = fontconfig carga más rápido al abrir cada app.
-	archcraft-fonts xorg-fonts-100dpi xorg-fonts-75dpi
 	# Qt del sistema (temas y apps del escritorio): LabSim trae su propio Qt (~250 MB)
 	kvantum kvantum-qt5 qt5ct qt6ct archcraft-config-qt simplescreenrecorder
 	# Impresión (cups está apagado) y VPN que no se usan

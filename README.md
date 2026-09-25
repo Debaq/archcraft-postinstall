@@ -105,7 +105,7 @@ actualizador pueda reemplazar archivos).
 | `30-servicios` | Desactiva servicios innecesarios (bluetooth, impresión, avahi, cloud-init, tareas diarias…), DNS por NetworkManager, journal chico, sin volcados de memoria ni watchdog. |
 | `40-arranque` | `mitigations=off` y otros parámetros de kernel, sin AppArmor, GRUB sin tema y con el menú oculto 1 s (`Esc` lo muestra), sin initramfs de respaldo. |
 | `50-disco` | `noatime` y planificador `bfq` en discos HDD. |
-| `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, compiladores, Qt del sistema, fuentes, impresión, VPN, temas, iconos, manuales e idiomas ajenos. |
+| `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, compiladores, Qt del sistema, impresión, VPN, temas, iconos, manuales e idiomas ajenos. |
 | `70-kiosko` | Autologin en tty1, X con un Openbox mínimo (sin compositor), la app siempre abierta, volumen fijo, teclado, apagado ordenado. |
 | `80-audio` | Corre `diag-audio.sh` (sin tono de prueba): repara el audio y deja el diagnóstico en `~/audio-<hostname>.txt`. |
 
@@ -126,7 +126,7 @@ Todo lo ajustable está en [`config.sh`](config.sh):
 | `KIOSK_REOPEN_IDLE` | Segundos sin uso tras los que se reabre la app si el docente la cerró (300). |
 | `XKB_LAYOUT` | Distribución de teclado (`latam`). |
 | `KERNEL_PARAMS` / `KERNEL_PARAMS_REMOVE` | Parámetros de kernel que se agregan / quitan. |
-| `KEEP_PKGS` | Paquetes que el kiosko necesita: se instalan y nunca se quitan. |
+| `KEEP_PKGS` | Paquetes que el kiosko necesita (incluye git, herramientas de mantenimiento y todas las fuentes): se instalan, quedan explícitos y nunca se quitan, ni en cascada. |
 | `REMOVE_PKGS` / `REMOVE_PATTERNS` | Paquetes que se quitan (si otro paquete que se queda los necesita, se saltan con un aviso). |
 | `DISABLE_UNITS` | Servicios que se desactivan. |
 | `FIRMWARE_REMOVE` | Firmware que se quita siempre (el de GPU y Marvell, según el hardware). |

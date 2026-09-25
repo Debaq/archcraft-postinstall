@@ -15,6 +15,17 @@ export ROOT FILES="$ROOT/files"
 
 source "$ROOT/lib.sh"
 
+# Sin git no hay actualización (una versión anterior lo quitaba junto con yay): se reinstala.
+# Con SUDO_PASS (pruebas en la VM) la contraseña va por stdin: el askpass se arma más abajo.
+if [[ -d "$ROOT/.git" ]] && ! command -v git &>/dev/null; then
+	step "Reinstalando git"
+	if [[ -n "${SUDO_PASS:-}" ]]; then
+		echo "$SUDO_PASS" | sudo -S -p "" pacman -S --needed --noconfirm git >/dev/null
+	else
+		sudo pacman -S --needed --noconfirm git >/dev/null
+	fi && ok "git instalado" || warn "No se pudo instalar git: el postinstall no se actualizará (sudo pacman -S git)"
+fi
+
 # Actualización: si llega una versión nueva, se relanza con ella (una sola vez)
 if [[ -z "${POSTINSTALL_ACTUALIZADO:-}" && -d "$ROOT/.git" ]] && command -v git &>/dev/null; then
 	step "Actualización"
