@@ -61,7 +61,8 @@ cd archcraft-postinstall && git pull && ./diag-audio.sh
 Diagnostica, repara y prueba un tono: reinstala los paquetes de audio y el firmware, quita
 PulseAudio si quedó, reinicia PipeWire olvidando la salida elegida y prefiere parlantes o
 audífonos sobre HDMI. Todo (antes, reparación, después y si se escuchó el tono) queda en
-`~/audio-<hostname>.txt`. `./diag-audio.sh --solo-diag` solo diagnostica.
+`~/audio-<hostname>.txt`. `./diag-audio.sh --solo-diag` solo diagnostica. `postinstall.sh` ya
+lo corre al final (módulo `80-audio`).
 
 ## Cómo se usa el kiosko
 
@@ -90,6 +91,7 @@ actualizador pueda reemplazar archivos).
 | `50-disco` | `noatime` y planificador `bfq` en discos HDD. |
 | `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, temas, iconos, manuales e idiomas ajenos. |
 | `70-kiosko` | Autologin en tty1, X con un Openbox mínimo (sin compositor), LabSim siempre abierto, volumen fijo, teclado, apagado ordenado. |
+| `80-audio` | Corre `diag-audio.sh` (sin tono de prueba): repara el audio y deja el diagnóstico en `~/audio-<hostname>.txt`. |
 
 Los archivos del sistema que se modifican quedan respaldados como `.orig`
 (`/etc/fstab.orig`, `/etc/default/grub.orig`, `/etc/mkinitcpio.conf.orig`, `~/.xinitrc.orig`).

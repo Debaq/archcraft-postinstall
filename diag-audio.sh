@@ -3,6 +3,7 @@
 # Correr con el usuario del kiosko (sin sudo), desde la terminal del menú o por SSH.
 # Uso: ./diag-audio.sh              diagnostica, repara, vuelve a diagnosticar y prueba un tono
 #      ./diag-audio.sh --solo-diag  solo diagnostica
+#      ./diag-audio.sh --sin-prueba diagnostica y repara, sin tono (así lo corre postinstall.sh)
 # Todo queda en ~/audio-<hostname>.txt
 set -uo pipefail
 
@@ -11,12 +12,15 @@ source "$ROOT/lib.sh"
 source "$ROOT/config.sh"
 
 [[ $EUID -ne 0 ]] || { echo "Ejecutar con el usuario del kiosko, sin sudo" >&2; exit 1; }
+# Desde postinstall.sh con SUDO_PASS (VM): sudo sin terminal, igual que allá
+[[ -n "${SUDO_ASKPASS:-}" ]] && sudo() { command sudo -A "$@"; }
 
 # Por SSH no vienen: sin ellas no se llega a PipeWire ni a systemctl --user
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=$XDG_RUNTIME_DIR/bus}"
 OUT="$HOME/audio-$(hostnamectl hostname 2>/dev/null || cat /etc/hostname).txt"
 SESSION="$(loginctl list-sessions --no-legend 2>/dev/null | awk -v u="$USER" '$3 == u {print $1; exit}')"
+KDIR="$HOME/.config/kiosko"
 UNITS=(pipewire.socket pipewire.service pipewire-pulse.socket pipewire-pulse.service wireplumber.service)
 
 CMDS=(
@@ -46,7 +50,7 @@ diag() {
 }
 
 reparar() {
-	local pa p i sinks out def n ctl
+	local pa p i sinks out def n ctl pid app_env=()
 
 	step "Paquetes"
 	sudo -v || return 1
@@ -70,6 +74,23 @@ reparar() {
 	ok "Canales de las tarjetas sin silencio"
 
 	step "PipeWire"
+	# Qt se conecta al audio una sola vez: con la app abierta, al reiniciar PipeWire queda muda.
+	# Se cierra en orden (SIGTERM: guarda lo abierto) y se reabre al final con su mismo entorno.
+	pid="$(pgrep -x "$KIOSK_APP" | head -1)"
+	if [[ -n "$pid" ]]; then
+		# Sin las variables de PyInstaller: apuntan a sus librerías y romperían los comandos del sistema
+		while IFS= read -r -d '' p; do
+			[[ "$p" =~ ^(LD_LIBRARY_PATH|_PYI|_MEI) ]] || app_env+=("$p")
+		done <"/proc/$pid/environ"
+		touch "$KDIR/.saliendo" # relanzar.sh termina en vez de reabrirla
+		pkill -TERM -x "$KIOSK_APP"
+		for i in $(seq 15); do
+			pgrep -x "$KIOSK_APP" >/dev/null || break
+			sleep 1
+		done
+		pkill -KILL -x "$KIOSK_APP"
+		ok "$KIOSK_APP cerrado (se reabre al terminar)"
+	fi
 	systemctl --user unmask "${UNITS[@]}" &>/dev/null
 	systemctl --user enable pipewire.socket pipewire-pulse.socket wireplumber.service &>/dev/null
 	# WirePlumber recuerda la salida y el perfil elegidos: si quedó en un HDMI sin parlantes o
@@ -112,11 +133,24 @@ reparar() {
 		wpctl set-volume @DEFAULT_AUDIO_SINK@ "$KIOSK_VOLUME%" && wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 &&
 			ok "Volumen $KIOSK_VOLUME%, sin silencio"
 	fi
+
+	if ((${#app_env[@]})); then
+		step "$KIOSK_APP"
+		if [[ -x "$KDIR/relanzar.sh" ]]; then
+			# Espera a que el relanzador anterior suelte el lock
+			flock -w 10 "$KDIR/.relanzar.lock" true
+			env -i "${app_env[@]}" setsid -f "$KDIR/relanzar.sh" </dev/null &>/dev/null
+			ok "$KIOSK_APP reabierto"
+		else
+			rm -f "$KDIR/.saliendo"
+			warn "Abre $KIOSK_APP de nuevo"
+		fi
+	fi
 }
 
 diag >"$OUT"
 echo "Diagnóstico guardado en $OUT"
-[[ "${1:-}" == --solo-diag ]] && exit 0
+[[ " $* " == *" --solo-diag "* ]] && exit 0
 
 echo "################ REPARACIÓN" >>"$OUT"
 reparar 2>&1 | tee -a "$OUT"
@@ -124,7 +158,7 @@ echo -e "\n################ DESPUÉS DE REPARAR" >>"$OUT"
 diag >>"$OUT"
 
 # Tono de prueba: la respuesta queda en el archivo
-if [[ -t 0 ]] && command -v speaker-test &>/dev/null; then
+if [[ -t 0 && " $* " != *" --sin-prueba "* ]] && command -v speaker-test &>/dev/null; then
 	step "Prueba"
 	echo "Suena un tono por el parlante izquierdo y luego por el derecho..."
 	timeout 6 speaker-test -c 2 -t sine -f 440 &>/dev/null
