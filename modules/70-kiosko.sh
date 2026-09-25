@@ -21,7 +21,7 @@ KDIR="$HOME/.config/kiosko"
 mkdir -p "$KDIR"
 cp "$FILES"/kiosko/{rc.xml,menu.xml,xinitrc,autostart,relanzar.sh,apagar.sh,login.sh} "$KDIR/"
 sed -i -e "s|@TERM@|$TERM_CMD|g" -e "s|@APP@|$APPS_DIR/$KIOSK_APP/run.sh|g" -e "s|@KDIR@|$KDIR|g" "$KDIR"/*
-sed -i -e "s|@APPNAME@|$KIOSK_APP|g" "$KDIR"/*
+sed -i -e "s|@APPNAME@|$KIOSK_APP|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" "$KDIR"/*
 printf "%s\n" "${KIOSK_ENV[@]}" >"$KDIR/env"
 chmod +x "$KDIR"/{xinitrc,autostart,relanzar.sh,apagar.sh}
 ok "Config en $KDIR (terminal: $TERM_CMD)"

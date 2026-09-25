@@ -23,7 +23,7 @@ XKB_LAYOUT=latam
 KEEP_PKGS=(
 	xorg-server xorg-xinit xorg-xset xorg-xsetroot openbox
 	thunar thunar-volman thunar-archive-plugin xfce4-terminal atril nm-connection-editor
-	networkmanager pipewire pipewire-pulse wireplumber
+	networkmanager pipewire pipewire-pulse wireplumber rtkit # rtkit: audio en tiempo real, sin cortes con CPU cargada
 )
 
 # Paquetes que se eliminan si están instalados
@@ -45,6 +45,13 @@ REMOVE_PKGS=(
 	# Desarrollo de Xorg y fuentes asiáticas (~300 MB)
 	xorg-server-devel xorg-server-src xorg-server-xvfb noto-fonts-cjk
 )
+# Patrones (regex sobre el nombre) que también se eliminan: temas, iconos y cursores
+# de Archcraft (~1,7 GB). GTK queda con Adwaita.
+REMOVE_PATTERNS=('^archcraft-(gtk-theme|icons|cursor)-')
+
+# Idiomas que se conservan en /usr/share/locale (el resto, y man/doc, se borra y
+# pacman deja de instalarlos con NoExtract)
+KEEP_LOCALES=(es en)
 
 # Servicios que se desactivan si existen
 DISABLE_UNITS=(
@@ -55,9 +62,14 @@ DISABLE_UNITS=(
 	NetworkManager-wait-online.service
 	reflector.service reflector.timer
 	pcscd.socket systemd-time-wait-sync.service
-	choose-mirror.service pacman-init.service
+	choose-mirror.service
 	apparmor.service
+	man-db.timer # reconstruye el índice de man a diario: tirones en HDD
+	systemd-userdbd.socket systemd-userdbd.service
 )
+
+# Volumen del sistema al iniciar la sesión (%). LabSim maneja los niveles: el sistema va fijo.
+KIOSK_VOLUME=100
 
 # Variables de entorno de la sesión kiosko (las heredan la app y todo lo que se abra)
 KIOSK_ENV=(

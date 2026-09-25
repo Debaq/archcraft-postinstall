@@ -12,7 +12,33 @@ fi
 pkg_install "${KEEP_PKGS[@]}"
 sudo pacman -D --asexplicit "${KEEP_PKGS[@]}" >/dev/null
 
-pkg_remove "${REMOVE_PKGS[@]}"
+mapfile -t by_pattern < <(for re in "${REMOVE_PATTERNS[@]}"; do pacman -Qq | grep -E "$re"; done)
+pkg_remove "${REMOVE_PKGS[@]}" "${by_pattern[@]}"
+
+# GTK con el tema de fábrica (los de Archcraft ya no están)
+mkdir -p "$HOME/.config/gtk-3.0"
+cat >"$HOME/.config/gtk-3.0/settings.ini" <<'INI'
+[Settings]
+gtk-theme-name=Adwaita
+gtk-icon-theme-name=Adwaita
+gtk-cursor-theme-name=Adwaita
+INI
+
+# Sin manuales, documentación ni idiomas ajenos, ahora y en futuras actualizaciones
+keep=""
+for l in "${KEEP_LOCALES[@]}"; do keep+=" !usr/share/locale/$l* !usr/share/locale/${l}_*"; done
+noextract="NoExtract = usr/share/man/* usr/share/doc/* usr/share/help/* usr/share/gtk-doc/* usr/share/info/* usr/share/locale/*$keep !usr/share/locale/locale.alias"
+if ! grep -qxF "$noextract" /etc/pacman.conf; then
+	sudo sed -i '/^NoExtract = usr\/share\/man/d' /etc/pacman.conf
+	sudo sed -i "/^\[options\]/a $noextract" /etc/pacman.conf
+	sudo rm -rf /usr/share/{man,doc,help,gtk-doc,info}/*
+	find /usr/share/locale -mindepth 1 -maxdepth 1 -type d | while read -r d; do
+		n="$(basename "$d")" k=0
+		for l in "${KEEP_LOCALES[@]}"; do [[ "$n" == "$l" || "$n" == "$l"_* || "$n" == "$l"@* ]] && k=1; done
+		((k)) || sudo rm -rf "$d"
+	done
+	ok "Sin man/doc ni idiomas ajenos (NoExtract en pacman.conf)"
+fi
 
 if ((plymouth_hook)); then
 	sudo mkinitcpio -P &>/dev/null && ok "initramfs regenerado sin plymouth"

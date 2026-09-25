@@ -6,6 +6,18 @@ if [[ ! -f /etc/default/grub ]]; then
 fi
 
 changed=0
+
+# Sin initramfs "fallback": las actualizaciones de kernel tardan la mitad
+for preset in /etc/mkinitcpio.d/*.preset; do
+	[[ -f "$preset" ]] || continue
+	if grep -q "^PRESETS=('default' 'fallback')" "$preset"; then
+		sudo sed -i "s/^PRESETS=('default' 'fallback')/PRESETS=('default')/" "$preset"
+		sudo rm -f /boot/initramfs-*-fallback.img
+		changed=1
+		ok "Sin initramfs fallback ($(basename "$preset"))"
+	fi
+done
+
 # Archcraft usa comillas simples; se aceptan ambas
 current="$(sed -nE "s/^GRUB_CMDLINE_LINUX_DEFAULT=[\"'](.*)[\"']$/\1/p" /etc/default/grub)"
 read -ra words <<<"$current"
