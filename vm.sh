@@ -46,7 +46,7 @@ create)
 		--disk "path=$ISO,device=cdrom,bus=sata" \
 		--import \
 		--network "passt,portForward=$SSH_PORT:22" \
-		--graphics spice --video vga \
+		--graphics spice --video qxl \
 		--noautoconsole
 	;;
 eject)
