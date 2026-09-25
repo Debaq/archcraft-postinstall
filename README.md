@@ -1,7 +1,9 @@
 # archcraft-postinstall
 
 Convierte una instalación normal de [Archcraft](https://archcraft.io) en un **kiosko liviano
-para equipos lentos** (2 GB de RAM o menos) que solo corre [LabSim](https://github.com/Debaq/LabSim).
+para equipos lentos** (2 GB de RAM o menos) que corre una sola app a pantalla completa:
+[LabSim](https://github.com/Debaq/LabSim), [Kütral](https://github.com/Debaq/kutral) o
+[LabNAS](https://github.com/Debaq/labnas).
 No hay que mantener una ISO propia: se instala Archcraft de fábrica y después se corre este script.
 
 Resultado medido en una VM con 2 GB de RAM:
@@ -33,8 +35,9 @@ cd archcraft-postinstall
 ./postinstall.sh
 ```
 
-Pide la contraseña de `sudo` **una sola vez**. Tarda unos minutos (descarga LabSim, ~180 MB).
-Al terminar, **reiniciar**: el equipo arranca directo en LabSim.
+Primero pregunta **qué app abre el kiosko** (LabSim, Kutral o LabNAS; se recuerda para las próximas
+corridas) y después la contraseña de `sudo`, **una sola vez**. Tarda unos minutos (descarga la
+app, ~180 MB). Al terminar, **reiniciar**: el equipo arranca directo en la app.
 
 Se puede volver a correr sin problema. Cada vez:
 
@@ -49,6 +52,8 @@ Se puede volver a correr sin problema. Cada vez:
 ```bash
 ./postinstall.sh               # lo nuevo o cambiado
 ./postinstall.sh --todo        # todos, aunque ya estén hechos
+./postinstall.sh --elegir      # vuelve a preguntar la app del kiosko
+./postinstall.sh --app=kutral  # cambia la app sin preguntar
 ./postinstall.sh kiosko        # solo 70-kiosko (siempre)
 ./postinstall.sh 10 70         # 10-apps y 70-kiosko (siempre)
 ```
@@ -79,9 +84,10 @@ lo corre al final (módulo `80-audio`).
 - **Apagar:** botón de encendido del equipo. LabSim recibe `SIGTERM` para guardar y salir, y el
   equipo se apaga (espera hasta 15 s). Mantener el botón apretado fuerza el apagado.
 - **Si LabSim se cae,** se vuelve a abrir solo en unos segundos.
-- **Si un docente cierra LabSim** (salida normal), no se reabre: queda el fondo y con **clic
-  derecho** aparece el menú de mantenimiento: LabSim, Archivos, Red / Wi-Fi, Terminal,
-  Reiniciar, Apagar.
+- **Si un docente cierra LabSim** (salida normal), queda el fondo y con **clic derecho** aparece
+  el menú de mantenimiento: LabSim, Archivos, Red / Wi-Fi, Terminal, Reiniciar, Apagar.
+  LabSim se reabre solo tras **5 minutos sin tocar teclado ni mouse** (`KIOSK_REOPEN_IDLE`), o
+  al elegirlo en el menú.
 - **Consola de mantenimiento:** `Ctrl+Alt+F2` (pide usuario y contraseña).
 - Con LabSim abierto no hay atajos para abrir otras cosas: el alumno no sale de LabSim.
 
@@ -93,13 +99,13 @@ actualizador pueda reemplazar archivos).
 | Módulo | Qué hace |
 |---|---|
 | `05-pacman` | Deja las llaves de pacman en disco. Archcraft las hereda de la ISO en memoria y las regenera en cada arranque (lento en CPUs viejas). |
-| `10-apps` | Instala las apps de `APPS` desde GitHub Releases en `/opt`, con acceso directo. |
+| `10-apps` | Instala la app elegida en `/opt/<app>` con acceso directo. Corre siempre: Kutral no se actualiza sola y aquí baja la versión nueva. |
 | `20-memoria` | zram del tamaño de la RAM (zstd) y ajustes de memoria y escritura a disco para poca RAM y HDD. |
 | `30-servicios` | Desactiva servicios innecesarios (bluetooth, impresión, avahi, cloud-init, tareas diarias…), DNS por NetworkManager, journal chico, sin volcados de memoria ni watchdog. |
 | `40-arranque` | `mitigations=off` y otros parámetros de kernel, GRUB con 1 s de espera, sin initramfs de respaldo. |
 | `50-disco` | `noatime` y planificador `bfq` en discos HDD. |
 | `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, temas, iconos, manuales e idiomas ajenos. |
-| `70-kiosko` | Autologin en tty1, X con un Openbox mínimo (sin compositor), LabSim siempre abierto, volumen fijo, teclado, apagado ordenado. |
+| `70-kiosko` | Autologin en tty1, X con un Openbox mínimo (sin compositor), la app siempre abierta, volumen fijo, teclado, apagado ordenado. |
 | `80-audio` | Corre `diag-audio.sh` (sin tono de prueba): repara el audio y deja el diagnóstico en `~/audio-<hostname>.txt`. |
 
 Los archivos del sistema que se modifican quedan respaldados como `.orig`
@@ -114,10 +120,9 @@ Todo lo ajustable está en [`config.sh`](config.sh):
 
 | Variable | Para qué |
 |---|---|
-| `APPS` | Apps a instalar desde GitHub Releases: `"nombre\|repo\|prefijo_tag\|asset.tar.gz"`. El tar debe traer una carpeta `nombre/` con el ejecutable `nombre` y un `run.sh`. |
-| `KIOSK_APP` | App que abre el kiosko y mantiene abierta. |
-| `KIOSK_ENV` | Variables de entorno de la sesión kiosko (`LABSIM_KIOSKO=1`, `LABSIM_AUTO_UPDATE=1`). |
+| `APP_DEFAULT` | App del kiosko si no se eligió otra (`labsim`); también es la opción por defecto del menú. |
 | `KIOSK_VOLUME` | Volumen del sistema al iniciar (%). |
+| `KIOSK_REOPEN_IDLE` | Segundos sin uso tras los que se reabre la app si el docente la cerró (300). |
 | `XKB_LAYOUT` | Distribución de teclado (`latam`). |
 | `KERNEL_PARAMS` / `KERNEL_PARAMS_REMOVE` | Parámetros de kernel que se agregan / quitan. |
 | `KEEP_PKGS` | Paquetes que el kiosko necesita: se instalan y nunca se quitan. |
@@ -125,13 +130,48 @@ Todo lo ajustable está en [`config.sh`](config.sh):
 | `DISABLE_UNITS` | Servicios que se desactivan. |
 | `KEEP_LOCALES` | Idiomas que se conservan. |
 
-## Lo que LabSim recibe del kiosko
+## Apps del kiosko
+
+Cada app es un archivo en [`apps/`](apps) que define:
+
+| Variable / función | Para qué |
+|---|---|
+| `APP_NAME` / `APP_DESC` | Nombre (carpeta en `/opt`, menú) y descripción en el menú de elección. |
+| `APP_PROC` | Nombre del proceso, para vigilarla (`pgrep -x`) y cerrarla al apagar. |
+| `APP_PKGS` | Paquetes que necesita del sistema: se instalan y nunca se quitan. |
+| `APP_ENV` | Variables de entorno de la sesión kiosko. |
+| `APP_DIR` | Opcional: carpeta de la app (por defecto `/opt/<APP_NAME>`). |
+| `APP_WINDOW` | Opcional: atributos de Openbox para reconocer su ventana (`title="…"`), si la app no se pone sola a pantalla completa. |
+| `app_install <dest>` | Instala o actualiza en `<dest>`, dejando `<dest>/run.sh`. |
+| `app_icon <dest>` | Ruta del ícono para el acceso directo. |
+
+Para agregar otra app basta con otro archivo en `apps/`: aparece sola en el menú.
+
+**LabSim** (`apps/labsim.sh`): tar de PyInstaller; se actualiza sola.
 
 - `LABSIM_KIOSKO=1`: modo laboratorio (pantalla completa, solo un docente puede salir).
 - `LABSIM_AUTO_UPDATE=1`: se actualiza sin preguntar.
-- `SIGTERM` al apagar: debe guardar informes y logs y salir, aunque no haya docente logueado.
-- Salida con código 0 = la cerró un docente (no se reabre); cualquier otro código = caída (se reabre).
-- Volumen del sistema fijo: los niveles los maneja LabSim.
+
+**Kutral** (`apps/kutral.sh`): binario suelto del release más `vendor/` (yt-dlp, uosc y los
+`.conf` de mpv del mismo tag, como `src-tauri/vendor/fetch.sh`); usa el mpv, WebKitGTK y GTK3 del
+sistema. No se actualiza sola: `10-apps` baja el release nuevo en cada corrida.
+
+- `KUTRAL_OS=1`: modo equipo dedicado (wifi, brillo, volumen y apagado desde la app).
+- `WEBKIT_DISABLE_DMABUF_RENDERER=1`: evita la ventana en blanco de WebKitGTK en GPUs viejas.
+
+**LabNAS** (`apps/labnas.sh`): el equipo pasa a ser el servidor. El servidor va en `/opt/labnas`
+como servicio `labnas` (root, `http://<equipo>:3001`); se instala una vez y después se actualiza
+desde su web. El kiosko muestra la UI con `labnas-viewer` (`/opt/labnas-viewer`, pantalla completa
+por regla de Openbox), que se actualiza en cada corrida. El servicio sigue activo aunque después se
+elija otra app. Ojo: el kiosko desactiva `cups` y `avahi`, así que la impresión de documentos de
+LabNAS no anda sin reactivarlos.
+
+Lo que cualquier app recibe del kiosko:
+
+- `SIGTERM` al apagar: debe guardar lo que tenga abierto y salir.
+- Salida con código 0 = la cerró el usuario (se reabre tras `KIOSK_REOPEN_IDLE` s sin uso); cualquier
+  otro código = caída (se reabre enseguida).
+- Volumen del sistema fijo: los niveles los maneja la app.
 
 ## Probar cambios en una VM
 

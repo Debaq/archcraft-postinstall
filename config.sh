@@ -1,14 +1,9 @@
 # Configuración del post-install. Se carga antes de cada módulo.
 
-# Apps instaladas desde GitHub Releases: "nombre|repo|prefijo_tag|asset"
-# El asset debe ser un tar.gz con una carpeta <nombre>/ que contenga el ejecutable <nombre>.
-APPS=(
-	"LabSim|Debaq/LabSim|pyinstaller-v|LabSim-linux-x86_64.tar.gz"
-)
+# Apps del kiosko: una por archivo en apps/ (nombre, paquetes, variables y cómo se instala).
+# postinstall.sh pregunta cuál abre el kiosko y lo recuerda; solo esa se instala.
 APPS_DIR=/opt
-
-# App que abre el kiosko al iniciar y relanza si se cierra
-KIOSK_APP=LabSim
+APP_DEFAULT=labsim # la que se usa sin elección guardada (y la opción por defecto del menú)
 
 # Parámetros de kernel extra (mitigations=off: más rendimiento en CPUs viejas, menos seguridad)
 KERNEL_PARAMS=(mitigations=off nowatchdog zswap.enabled=0 quiet loglevel=3)
@@ -33,6 +28,7 @@ KEEP_PKGS=(
 	xorg-server xorg-xinit xorg-xset xorg-xsetroot openbox
 	thunar thunar-volman thunar-archive-plugin xfce4-terminal atril nm-connection-editor
 	networkmanager "${AUDIO_PKGS[@]}"
+	xprintidle # relanzar.sh: reabre la app tras un rato sin uso
 )
 
 # Paquetes que se eliminan si están instalados
@@ -77,11 +73,9 @@ DISABLE_UNITS=(
 	systemd-userdbd.socket systemd-userdbd.service
 )
 
-# Volumen del sistema al iniciar la sesión (%). LabSim maneja los niveles: el sistema va fijo.
+# Volumen del sistema al iniciar la sesión (%). La app maneja los niveles: el sistema va fijo.
 KIOSK_VOLUME=100
 
-# Variables de entorno de la sesión kiosko (las heredan la app y todo lo que se abra)
-KIOSK_ENV=(
-	LABSIM_AUTO_UPDATE=1 # LabSim actualiza sin preguntar
-	LABSIM_KIOSKO=1      # LabSim sabe que corre en el kiosko
-)
+# Si el docente cierra la app, se reabre sola tras estos segundos sin tocar teclado ni mouse
+# (mientras, queda el menú de mantenimiento con clic derecho).
+KIOSK_REOPEN_IDLE=300

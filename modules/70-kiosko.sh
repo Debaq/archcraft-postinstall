@@ -1,6 +1,6 @@
 # Kiosko: autologin en tty1 sin display manager, startx con Openbox mínimo
 # (config propia en ~/.config/kiosko, no carga el autostart de Archcraft)
-# y la app $KIOSK_APP abierta todo el tiempo.
+# y la app elegida (apps/) abierta todo el tiempo.
 
 pkg_install "${KEEP_PKGS[@]}"
 
@@ -20,11 +20,15 @@ fi
 KDIR="$HOME/.config/kiosko"
 mkdir -p "$KDIR"
 cp "$FILES"/kiosko/{rc.xml,menu.xml,xinitrc,autostart,relanzar.sh,apagar.sh,login.sh} "$KDIR/"
-sed -i -e "s|@TERM@|$TERM_CMD|g" -e "s|@APP@|$APPS_DIR/$KIOSK_APP/run.sh|g" -e "s|@KDIR@|$KDIR|g" "$KDIR"/*
-sed -i -e "s|@APPNAME@|$KIOSK_APP|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" "$KDIR"/*
-printf "%s\n" "${KIOSK_ENV[@]}" >"$KDIR/env"
+sed -i -e "s|@TERM@|$TERM_CMD|g" -e "s|@APP@|$APP_DIR/run.sh|g" -e "s|@KDIR@|$KDIR|g" "$KDIR"/*
+sed -i -e "s|@APPNAME@|$APP_NAME|g" -e "s|@APPPROC@|$APP_PROC|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" -e "s|@IDLE@|$KIOSK_REOPEN_IDLE|g" "$KDIR"/*
+printf "%s\n" "${APP_ENV[@]}" >"$KDIR/env"
+# Apps que no se ponen solas a pantalla completa: regla de Openbox por ventana (APP_WINDOW)
+rule=""
+[[ -n "${APP_WINDOW:-}" ]] && rule="<applications><application $APP_WINDOW><decor>no</decor><fullscreen>yes</fullscreen></application></applications>"
+sed -i "s|@APPRULES@|$rule|" "$KDIR/rc.xml"
 chmod +x "$KDIR"/{xinitrc,autostart,relanzar.sh,apagar.sh}
-ok "Config en $KDIR (terminal: $TERM_CMD)"
+ok "Config en $KDIR (app: $APP_NAME, terminal: $TERM_CMD)"
 
 # El shell de login lanza X en tty1 (bash y zsh)
 for f in .bash_profile .zprofile; do

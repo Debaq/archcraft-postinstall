@@ -4,6 +4,18 @@ step() { printf '\n\e[1;34m==> %s\e[0m\n' "$*"; }
 ok()   { printf '\e[1;32m  ✓ %s\e[0m\n' "$*"; }
 warn() { printf '\e[1;33m  ! %s\e[0m\n' "$*" >&2; }
 
+# Estado del postinstall: app elegida y módulos ya aplicados
+ESTADO="${XDG_STATE_HOME:-$HOME/.local/state}/archcraft-postinstall"
+
+# Carga la app del kiosko elegida (apps/<nombre>.sh); sin elección, APP_DEFAULT
+app_load() {
+	local a
+	a="$(cat "$ESTADO/app" 2>/dev/null || true)"
+	[[ -n "$a" && -f "$ROOT/apps/$a.sh" ]] || a="$APP_DEFAULT"
+	source "$ROOT/apps/$a.sh"
+	APP_DIR="${APP_DIR:-$APPS_DIR/$APP_NAME}"
+}
+
 # Instala solo los paquetes que falten (pacman -T lista los ausentes)
 pkg_install() {
 	local missing

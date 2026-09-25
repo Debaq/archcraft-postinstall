@@ -2,6 +2,8 @@
 # Post-instalación para Archcraft: aplica los módulos de modules/ en orden.
 # Uso: ./postinstall.sh             aplica los módulos que cambiaron o nunca se aplicaron
 #      ./postinstall.sh --todo      aplica todos, aunque ya estén hechos
+#      ./postinstall.sh --elegir    vuelve a preguntar qué app abre el kiosko
+#      ./postinstall.sh --app=kutral elige la app sin preguntar (nombre de apps/)
 #      ./postinstall.sh 10 paquetes aplica solo los módulos que coincidan (siempre)
 # Antes de empezar se actualiza desde git. Si un módulo falla, sigue con el resto.
 set -euo pipefail
@@ -30,10 +32,51 @@ fi
 
 source "$ROOT/config.sh"
 
-todo=0 filtros=()
+todo=0 elegir=0 app="" filtros=()
 for a in "$@"; do
-	if [[ "$a" == --todo ]]; then todo=1; else filtros+=("$a"); fi
+	case "$a" in
+	--todo) todo=1 ;;
+	--elegir) elegir=1 ;;
+	--app=*) app="${a#--app=}" app="${app,,}" ;;
+	*) filtros+=("$a") ;;
+	esac
 done
+
+# App del kiosko: se pregunta la primera vez (o con --elegir) y queda guardada
+mkdir -p "$ESTADO"
+if [[ -n "$app" ]]; then
+	[[ -f "$ROOT/apps/$app.sh" ]] || { warn "No existe apps/$app.sh"; exit 1; }
+	echo "$app" >"$ESTADO/app"
+elif ((elegir)) || [[ ! -s "$ESTADO/app" ]]; then
+	mapfile -t apps < <(
+		echo "$APP_DEFAULT"
+		ls "$ROOT"/apps/*.sh | xargs -n1 basename | sed 's/\.sh$//' | grep -vx "$APP_DEFAULT"
+	)
+	actual="$(cat "$ESTADO/app" 2>/dev/null || echo "$APP_DEFAULT")"
+	if [[ -t 0 ]]; then
+		step "¿Qué app abre el kiosko?"
+		def=1 r=""
+		for i in "${!apps[@]}"; do
+			(
+				source "$ROOT/apps/${apps[i]}.sh"
+				printf '  %d) %-8s %s%s\n' $((i + 1)) "$APP_NAME" "$APP_DESC" "$([[ "${apps[i]}" == "$actual" ]] && echo "  (actual)")"
+			)
+			[[ "${apps[i]}" == "$actual" ]] && def=$((i + 1))
+		done
+		until [[ "$r" =~ ^[0-9]+$ ]] && ((r >= 1 && r <= ${#apps[@]})); do
+			read -rp "  Opción [$def]: " r || exit 1
+			r="${r:-$def}"
+		done
+		echo "${apps[r - 1]}" >"$ESTADO/app"
+	else
+		echo "$actual" >"$ESTADO/app"
+		warn "Sin terminal para preguntar: la app del kiosko es $actual (--app=<nombre> para cambiarla)"
+	fi
+fi
+app_load
+# Lo que la app necesita del sistema también queda protegido al limpiar paquetes
+KEEP_PKGS+=("${APP_PKGS[@]}")
+ok "App del kiosko: $APP_NAME"
 
 # Pide la contraseña de sudo una vez y la mantiene vigente mientras corre el script.
 # SUDO_PASS permite correrlo sin terminal interactiva (pruebas en la VM).
@@ -51,10 +94,9 @@ while sleep 50; do "${renew[@]}" || true; done 2>/dev/null &
 keepalive=$!
 trap 'kill $keepalive 2>/dev/null || true; rm -f "${SUDO_ASKPASS:-}"' EXIT
 
-# Módulos ya aplicados: huella del módulo y de todo lo que usa. Si nada cambió, se salta.
-ESTADO="${XDG_STATE_HOME:-$HOME/.local/state}/archcraft-postinstall"
-mkdir -p "$ESTADO"
-comun="$(cat "$ROOT"/{lib.sh,config.sh,diag-audio.sh} $(find "$FILES" -type f | sort) | sha256sum)"
+# Módulos ya aplicados: huella del módulo y de todo lo que usa (incluida la app elegida).
+# Si nada cambió, se salta. Los marcados "# postinstall: siempre" corren cada vez.
+comun="$(cat "$ROOT"/{lib.sh,config.sh,diag-audio.sh} "$ESTADO/app" $(find "$FILES" "$ROOT/apps" -type f | sort) | sha256sum)"
 huella() { { cat "$1"; echo "$comun"; } | sha256sum | cut -d' ' -f1; }
 
 aplicados=() sin_cambios=() fallidos=()
@@ -65,7 +107,8 @@ for m in "${modules[@]}"; do
 		match=0
 		for f in "${filtros[@]}"; do [[ "$name" == *"$f"* ]] && match=1; done
 		((match)) || continue
-	elif ((!todo)) && [[ "$(cat "$ESTADO/$name" 2>/dev/null)" == "$(huella "$m")" ]]; then
+	elif ((!todo)) && ! grep -q '^# postinstall: siempre' "$m" &&
+		[[ "$(cat "$ESTADO/$name" 2>/dev/null)" == "$(huella "$m")" ]]; then
 		sin_cambios+=("$name")
 		continue
 	fi

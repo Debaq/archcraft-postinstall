@@ -10,6 +10,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 source "$ROOT/lib.sh"
 source "$ROOT/config.sh"
+app_load
 
 [[ $EUID -ne 0 ]] || { echo "Ejecutar con el usuario del kiosko, sin sudo" >&2; exit 1; }
 # Desde postinstall.sh con SUDO_PASS (VM): sudo sin terminal, igual que allá
@@ -76,20 +77,20 @@ reparar() {
 	step "PipeWire"
 	# Qt se conecta al audio una sola vez: con la app abierta, al reiniciar PipeWire queda muda.
 	# Se cierra en orden (SIGTERM: guarda lo abierto) y se reabre al final con su mismo entorno.
-	pid="$(pgrep -x "$KIOSK_APP" | head -1)"
+	pid="$(pgrep -x "$APP_PROC" | head -1)"
 	if [[ -n "$pid" ]]; then
 		# Sin las variables de PyInstaller: apuntan a sus librerías y romperían los comandos del sistema
 		while IFS= read -r -d '' p; do
 			[[ "$p" =~ ^(LD_LIBRARY_PATH|_PYI|_MEI) ]] || app_env+=("$p")
 		done <"/proc/$pid/environ"
 		touch "$KDIR/.saliendo" # relanzar.sh termina en vez de reabrirla
-		pkill -TERM -x "$KIOSK_APP"
+		pkill -TERM -x "$APP_PROC"
 		for i in $(seq 15); do
-			pgrep -x "$KIOSK_APP" >/dev/null || break
+			pgrep -x "$APP_PROC" >/dev/null || break
 			sleep 1
 		done
-		pkill -KILL -x "$KIOSK_APP"
-		ok "$KIOSK_APP cerrado (se reabre al terminar)"
+		pkill -KILL -x "$APP_PROC"
+		ok "$APP_NAME cerrado (se reabre al terminar)"
 	fi
 	systemctl --user unmask "${UNITS[@]}" &>/dev/null
 	systemctl --user enable pipewire.socket pipewire-pulse.socket wireplumber.service &>/dev/null
@@ -135,15 +136,15 @@ reparar() {
 	fi
 
 	if ((${#app_env[@]})); then
-		step "$KIOSK_APP"
+		step "$APP_NAME"
 		if [[ -x "$KDIR/relanzar.sh" ]]; then
 			# Espera a que el relanzador anterior suelte el lock
 			flock -w 10 "$KDIR/.relanzar.lock" true
 			env -i "${app_env[@]}" setsid -f "$KDIR/relanzar.sh" </dev/null &>/dev/null
-			ok "$KIOSK_APP reabierto"
+			ok "$APP_NAME reabierto"
 		else
 			rm -f "$KDIR/.saliendo"
-			warn "Abre $KIOSK_APP de nuevo"
+			warn "Abre $APP_NAME de nuevo"
 		fi
 	fi
 }

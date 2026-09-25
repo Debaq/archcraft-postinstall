@@ -5,8 +5,8 @@
 # Uso: apagar.sh poweroff|reboot
 accion="${1:-poweroff}"
 touch "@KDIR@/.saliendo"
-if pkill -TERM -x "@APPNAME@"; then
+if pkill -TERM -x "@APPPROC@"; then
 	i=0
-	while pgrep -x "@APPNAME@" >/dev/null && [ $i -lt 15 ]; do sleep 1; i=$((i + 1)); done
+	while pgrep -x "@APPPROC@" >/dev/null && [ $i -lt 15 ]; do sleep 1; i=$((i + 1)); done
 fi
 systemctl "$accion"

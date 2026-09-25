@@ -38,4 +38,5 @@
     </context>
   </mouse>
   <menu><file>@KDIR@/menu.xml</file><hideDelay>200</hideDelay></menu>
+  @APPRULES@
 </openbox_config>
