@@ -11,7 +11,9 @@ APP_DIR=/opt/labnas-viewer
 # kiosko apaga): mpv y yt-dlp música y video, ffmpeg timelapse, rsync respaldos, smartmontools SMART.
 # dunst y libnotify: el visor avisa con notify-send (impresión terminada, respaldo fallido, descargas);
 # sin un daemon de notificaciones (el kiosko quita dunst) esos avisos se pierden.
-APP_PKGS=(webkit2gtk-4.1 gtk3 mpv yt-dlp ffmpeg rsync smartmontools dunst libnotify)
+# libayatana-appindicator: el visor crea un ícono de bandeja y sin la librería se cae al abrir
+# (la carga con dlopen: ldd no la muestra).
+APP_PKGS=(webkit2gtk-4.1 gtk3 libayatana-appindicator mpv yt-dlp ffmpeg rsync smartmontools dunst libnotify)
 APP_ENV=(
 	WEBKIT_DISABLE_DMABUF_RENDERER=1 # sin esto WebKitGTK queda en blanco en varias GPU viejas
 )
