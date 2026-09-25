@@ -42,6 +42,14 @@ if ! grep -q '^GRUB_TIMEOUT=1$' /etc/default/grub; then
 	sudo sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=1/' /etc/default/grub
 	changed=1
 fi
+# Menú oculto (Esc durante ese segundo lo muestra) y sin el tema de Archcraft, que 60-paquetes
+# quita: dibujar el tema (imágenes y fuentes) tarda en equipos viejos
+if ! grep -q '^GRUB_TIMEOUT_STYLE=hidden$' /etc/default/grub || grep -q '^GRUB_THEME=' /etc/default/grub; then
+	[[ -e /etc/default/grub.orig ]] || sudo cp -a /etc/default/grub /etc/default/grub.orig
+	sudo sed -i -e '/^GRUB_TIMEOUT_STYLE=/d' -e '/^GRUB_THEME=/d' /etc/default/grub
+	echo 'GRUB_TIMEOUT_STYLE=hidden' | sudo tee -a /etc/default/grub >/dev/null
+	changed=1
+fi
 
 if ((changed)); then
 	sudo grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null

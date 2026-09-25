@@ -7,8 +7,21 @@ APP_DEFAULT=labsim # la que se usa sin elección guardada (y la opción por defe
 
 # Parámetros de kernel extra (mitigations=off: más rendimiento en CPUs viejas, menos seguridad)
 KERNEL_PARAMS=(mitigations=off nowatchdog zswap.enabled=0 quiet loglevel=3)
-# Parámetros que se quitan (splash: pantalla de plymouth, que se desinstala)
-KERNEL_PARAMS_REMOVE=(splash)
+# Parámetros que se quitan (splash: pantalla de plymouth, que se desinstala;
+# lsm: Archcraft agrega apparmor, que el kiosko no usa: queda la lista del kernel)
+KERNEL_PARAMS_REMOVE=(splash lsm)
+
+# Firmware que se quita siempre: tarjetas de red y discos de servidor, y el paquete del AUR
+# que los instala solo para silenciar avisos de mkinitcpio. El de GPU y Marvell se quita
+# según el hardware (15-hardware).
+FIRMWARE_REMOVE=(
+	linux-firmware-liquidio linux-firmware-mellanox linux-firmware-nfp linux-firmware-qlogic
+	aic94xx-firmware wd719x-firmware ast-firmware mkinitcpio-firmware
+)
+
+# earlyoom: con menos de 5 % de RAM y 10 % de swap libres cierra el proceso más grande.
+# Nunca la sesión gráfica, el audio, SSH ni el servidor de LabNAS. Sin espacios (systemd los parte).
+EARLYOOM_ARGS="-m 5 -s 10 -r 0 --avoid ^(Xorg|openbox|sshd|pipewire.*|wireplumber|labnas|systemd.*)$"
 
 # Distribución de teclado en X (la consola ya la trae del instalador)
 XKB_LAYOUT=latam
@@ -49,6 +62,28 @@ REMOVE_PKGS=(
 	cloud-init hyperv qemu-guest-agent linux-atm b43-fwcutter
 	# Desarrollo de Xorg y fuentes asiáticas (~300 MB)
 	xorg-server-devel xorg-server-src xorg-server-xvfb noto-fonts-cjk
+	# Compilar (AUR): el kiosko no compila nada (~300 MB con gcc y sus dependencias)
+	gcc make autoconf automake bison patch pkgconf yay downgrade
+	# Fuentes que ninguna app usa: Nerd Fonts de Archcraft y las de mapa de bits de X (~190 MB).
+	# Menos fuentes = fontconfig carga más rápido al abrir cada app.
+	archcraft-fonts xorg-fonts-100dpi xorg-fonts-75dpi
+	# Qt del sistema (temas y apps del escritorio): LabSim trae su propio Qt (~250 MB)
+	kvantum kvantum-qt5 qt5ct qt6ct archcraft-config-qt simplescreenrecorder
+	# Impresión (cups está apagado) y VPN que no se usan
+	gutenprint cups-pdf foomatic-db-engine
+	networkmanager-openvpn networkmanager-openconnect networkmanager-pptp networkmanager-strongswan
+	networkmanager-vpnc network-manager-sstp xl2tpd wvdial networkmanager-dmenu-git network-manager-applet
+	# Particionar y rescatar discos, redes de almacenamiento y otros cargadores de arranque
+	gparted partclone partimage fsarchiver dmraid open-iscsi nbd nfs-utils refind edk2-shell
+	grub-btrfs squashfs-tools sg3_utils sdparm fatresize
+	# Red y seguridad avanzadas
+	nmap bind tcpdump nethogs ndisc6 sequoia-sq openpgp-card-tools tpm2-tools ufw
+	# Restos del escritorio de Archcraft. Con pavucontrol y los applets se van solos gtk4 y los
+	# portales de xdg (~50 MB de RAM en la sesión)
+	blueman bluez-utils brltty pavucontrol xfce4-settings xsettingsd xfce-polkit ksuperkey xcolor maim
+	xdotool wmctrl wmname yad ueberzug highlight trash-cli mpc mplayer archcraft-vim archcraft-skeleton
+	gtk-nocsd-git xdg-user-dirs-gtk reflector powertop man-pages unarchiver jasper
+	xorg-server-xephyr xorg-server-xnest xorg-xwayland xorg-docs xorg-x11perf archcraft-grub-theme
 )
 # Patrones (regex sobre el nombre) que también se eliminan: temas, iconos y cursores
 # de Archcraft (~1,7 GB). GTK queda con Adwaita.

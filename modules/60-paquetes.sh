@@ -27,6 +27,12 @@ gtk-icon-theme-name=Adwaita
 gtk-cursor-theme-name=Adwaita
 INI
 
+# Variables globales que apuntan a lo que se quitó (qt6ct, firefox, alacritty)
+if grep -qE '^(QT_QPA_PLATFORMTHEME=qt6ct|BROWSER=firefox|TERMINAL=alacritty)$' /etc/environment; then
+	sudo sed -i -E -e '/^(QT_QPA_PLATFORMTHEME=qt6ct|BROWSER=firefox)$/d' -e 's/^TERMINAL=alacritty$/TERMINAL=xfce4-terminal/' /etc/environment
+	ok "/etc/environment sin qt6ct ni firefox"
+fi
+
 # Sin manuales, documentación ni idiomas ajenos, ahora y en futuras actualizaciones
 keep=""
 for l in "${KEEP_LOCALES[@]}"; do keep+=" !usr/share/locale/$l* !usr/share/locale/${l}_*"; done

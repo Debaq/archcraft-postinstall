@@ -15,6 +15,12 @@ for u in "${DISABLE_UNITS[@]}"; do
 	ok "Desactivado $u"
 done
 
+# Bus de accesibilidad de la sesión: el xinitrc del kiosko ya les dice a las apps que no lo usen
+if [[ "$(systemctl --global is-enabled at-spi-dbus-bus.service 2>/dev/null)" != masked ]] && [[ -e /usr/lib/systemd/user/at-spi-dbus-bus.service ]]; then
+	sudo systemctl --global mask -q at-spi-dbus-bus.service
+	ok "Desactivado at-spi-dbus-bus.service (sesión)"
+fi
+
 # DNS directo con NetworkManager (sin systemd-resolved)
 if systemctl is-enabled -q systemd-resolved.service 2>/dev/null; then
 	sys_write /etc/NetworkManager/conf.d/dns.conf <<'CONF'

@@ -100,11 +100,12 @@ actualizador pueda reemplazar archivos).
 |---|---|
 | `05-pacman` | Deja las llaves de pacman en disco. Archcraft las hereda de la ISO en memoria y las regenera en cada arranque (lento en CPUs viejas). |
 | `10-apps` | Instala la app elegida en `/opt/<app>` con acceso directo. Corre siempre: Kutral no se actualiza sola y aquí baja la versión nueva. |
+| `15-hardware` | Según el equipo (corre siempre): microcódigo de su CPU, video por hardware (VA-API) en GPUs Intel, quita el firmware de servidores y de GPUs que no tiene, quita los headers del kernel, CPU a máxima frecuencia si no tiene batería, y `earlyoom`. |
 | `20-memoria` | zram del tamaño de la RAM (zstd) y ajustes de memoria y escritura a disco para poca RAM y HDD. |
 | `30-servicios` | Desactiva servicios innecesarios (bluetooth, impresión, avahi, cloud-init, tareas diarias…), DNS por NetworkManager, journal chico, sin volcados de memoria ni watchdog. |
-| `40-arranque` | `mitigations=off` y otros parámetros de kernel, GRUB con 1 s de espera, sin initramfs de respaldo. |
+| `40-arranque` | `mitigations=off` y otros parámetros de kernel, sin AppArmor, GRUB sin tema y con el menú oculto 1 s (`Esc` lo muestra), sin initramfs de respaldo. |
 | `50-disco` | `noatime` y planificador `bfq` en discos HDD. |
-| `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, temas, iconos, manuales e idiomas ajenos. |
+| `60-paquetes` | Quita el escritorio de Archcraft (polybar, picom, rofi…), SDDM, plymouth, apps sin uso, compiladores, Qt del sistema, fuentes, impresión, VPN, temas, iconos, manuales e idiomas ajenos. |
 | `70-kiosko` | Autologin en tty1, X con un Openbox mínimo (sin compositor), la app siempre abierta, volumen fijo, teclado, apagado ordenado. |
 | `80-audio` | Corre `diag-audio.sh` (sin tono de prueba): repara el audio y deja el diagnóstico en `~/audio-<hostname>.txt`. |
 
@@ -128,6 +129,8 @@ Todo lo ajustable está en [`config.sh`](config.sh):
 | `KEEP_PKGS` | Paquetes que el kiosko necesita: se instalan y nunca se quitan. |
 | `REMOVE_PKGS` / `REMOVE_PATTERNS` | Paquetes que se quitan (si otro paquete que se queda los necesita, se saltan con un aviso). |
 | `DISABLE_UNITS` | Servicios que se desactivan. |
+| `FIRMWARE_REMOVE` | Firmware que se quita siempre (el de GPU y Marvell, según el hardware). |
+| `EARLYOOM_ARGS` | Cuándo `earlyoom` cierra el proceso más grande y qué procesos no toca nunca. |
 | `KEEP_LOCALES` | Idiomas que se conservan. |
 
 ## Apps del kiosko
