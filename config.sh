@@ -18,12 +18,21 @@ KERNEL_PARAMS_REMOVE=(splash)
 # Distribución de teclado en X (la consola ya la trae del instalador)
 XKB_LAYOUT=latam
 
+# Audio: PipeWire con las capas ALSA/Pulse y el firmware/perfiles de tarjetas nuevas
+# (sof-firmware: Intel desde ~2018; alsa-ucm-conf: perfiles de esas tarjetas).
+# diag-audio.sh reinstala esta misma lista al reparar.
+AUDIO_PKGS=(
+	pipewire pipewire-pulse pipewire-alsa wireplumber
+	rtkit # audio en tiempo real, sin cortes con CPU cargada
+	alsa-utils alsa-ucm-conf alsa-firmware sof-firmware
+)
+
 # Paquetes que el kiosko necesita: se instalan antes de limpiar y se marcan como explícitos
 # para que "pacman -Rns" no los arrastre al quitar el escritorio de Archcraft.
 KEEP_PKGS=(
 	xorg-server xorg-xinit xorg-xset xorg-xsetroot openbox
 	thunar thunar-volman thunar-archive-plugin xfce4-terminal atril nm-connection-editor
-	networkmanager pipewire pipewire-pulse wireplumber rtkit # rtkit: audio en tiempo real, sin cortes con CPU cargada
+	networkmanager "${AUDIO_PKGS[@]}"
 )
 
 # Paquetes que se eliminan si están instalados

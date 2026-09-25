@@ -50,16 +50,18 @@ módulos, se pasan partes de su nombre:
 cd archcraft-postinstall && git pull && ./postinstall.sh
 ```
 
-### Diagnóstico de audio
+### Sin audio
 
-Si un equipo queda sin sonido, con el usuario del kiosko (sin `sudo`):
+Con el usuario del kiosko (sin `sudo`), desde la terminal del menú o por SSH:
 
 ```bash
 cd archcraft-postinstall && git pull && ./diag-audio.sh
 ```
 
-Deja `~/audio-<hostname>.txt` con la tarjeta, el driver, los paquetes de audio y el estado de
-PipeWire/WirePlumber.
+Diagnostica, repara y prueba un tono: reinstala los paquetes de audio y el firmware, quita
+PulseAudio si quedó, reinicia PipeWire olvidando la salida elegida y prefiere parlantes o
+audífonos sobre HDMI. Todo (antes, reparación, después y si se escuchó el tono) queda en
+`~/audio-<hostname>.txt`. `./diag-audio.sh --solo-diag` solo diagnostica.
 
 ## Cómo se usa el kiosko
 
