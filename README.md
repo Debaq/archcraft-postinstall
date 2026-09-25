@@ -36,18 +36,27 @@ cd archcraft-postinstall
 Pide la contraseña de `sudo` **una sola vez**. Tarda unos minutos (descarga LabSim, ~180 MB).
 Al terminar, **reiniciar**: el equipo arranca directo en LabSim.
 
-Se puede volver a correr sin problema: lo que ya está hecho se salta. Para correr solo algunos
-módulos, se pasan partes de su nombre:
+Se puede volver a correr sin problema. Cada vez:
+
+1. **Se actualiza solo** desde git (`git pull`) y, si bajó una versión nueva, se relanza con ella.
+   Sin red o con cambios locales, avisa y sigue con la versión que tiene.
+2. **Salta los módulos ya hechos:** guarda una huella de cada módulo aplicado en
+   `~/.local/state/archcraft-postinstall/`. Un módulo se vuelve a aplicar solo si él, `config.sh`,
+   `lib.sh`, `files/` o `diag-audio.sh` cambiaron.
+3. **Si un módulo falla, sigue con el resto** y al final muestra el resumen. El que falló se
+   reintenta en la próxima corrida.
 
 ```bash
-./postinstall.sh kiosko        # solo 70-kiosko
-./postinstall.sh 10 70         # 10-apps y 70-kiosko
+./postinstall.sh               # lo nuevo o cambiado
+./postinstall.sh --todo        # todos, aunque ya estén hechos
+./postinstall.sh kiosko        # solo 70-kiosko (siempre)
+./postinstall.sh 10 70         # 10-apps y 70-kiosko (siempre)
 ```
 
-### Actualizar el script en un equipo ya configurado
+### Actualizar un equipo ya configurado
 
 ```bash
-cd archcraft-postinstall && git pull && ./postinstall.sh
+cd archcraft-postinstall && ./postinstall.sh
 ```
 
 ### Sin audio
@@ -55,7 +64,7 @@ cd archcraft-postinstall && git pull && ./postinstall.sh
 Con el usuario del kiosko (sin `sudo`), desde la terminal del menú o por SSH:
 
 ```bash
-cd archcraft-postinstall && git pull && ./diag-audio.sh
+cd archcraft-postinstall && git pull && ./diag-audio.sh     # o: ./postinstall.sh audio
 ```
 
 Diagnostica, repara y prueba un tono: reinstala los paquetes de audio y el firmware, quita
