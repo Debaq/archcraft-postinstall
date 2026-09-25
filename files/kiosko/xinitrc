@@ -1,0 +1,12 @@
+#!/bin/sh
+# Sin salvapantallas ni apagado de monitor
+xset s off -dpms
+xsetroot -solid '#1e2227' -cursor_name left_ptr
+[ -f /etc/X11/xinit/xinitrc.d/50-systemd-user.sh ] && . /etc/X11/xinit/xinitrc.d/50-systemd-user.sh
+set -a
+. "@KDIR@/env"
+set +a
+# Mientras dure la sesión, el botón de encendido lo maneja Openbox (apagar.sh)
+# en vez de logind; si X se cae, el botón vuelve a apagar normal.
+exec systemd-inhibit --what=handle-power-key --who=kiosko --why="Apagado ordenado" \
+	openbox --config-file "@KDIR@/rc.xml" --startup "@KDIR@/autostart"
