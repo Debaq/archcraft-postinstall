@@ -22,9 +22,11 @@ if [[ -n "${SUDO_PASS:-}" ]]; then
 	sudo() { command sudo -A "$@"; }
 fi
 sudo -v
-while sleep 50; do sudo -n -v; done 2>/dev/null &
+# Renueva el permiso de sudo; si una renovación falla no se corta (set -e se hereda)
+if [[ -n "${SUDO_PASS:-}" ]]; then renew=(sudo -v); else renew=(sudo -n -v); fi
+while sleep 50; do "${renew[@]}" || true; done 2>/dev/null &
 keepalive=$!
-trap 'kill $keepalive 2>/dev/null; rm -f "${SUDO_ASKPASS:-}"' EXIT
+trap 'kill $keepalive 2>/dev/null || true; rm -f "${SUDO_ASKPASS:-}"' EXIT
 
 mapfile -t modules < <(ls "$ROOT"/modules/*.sh 2>/dev/null | sort)
 for m in "${modules[@]}"; do
