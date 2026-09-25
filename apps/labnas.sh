@@ -37,13 +37,17 @@ app_install() {
 	if [[ -x "$LABNAS_SERVER/labnas-backend" ]] && grep -q "^User=$USER$" /etc/systemd/system/labnas.service 2>/dev/null; then
 		ok "Servidor LabNAS ya instalado en $LABNAS_SERVER (se actualiza solo)"
 	else
+		# La versión va explícita: sin --version, install.sh la busca con curl | grep -m1, que en
+		# Arch corta el pipe y sale con curl (23) antes de instalar nada.
+		read -r tag url < <(jq -r '[.[] | select(.draft | not) | .tag_name as $t | .assets[] | select(.name == "install.sh")
+			| "\($t) \(.browser_download_url)"][0] // empty' <<<"$rels") || true
 		tmp="$(mktemp -d)"
-		if ! curl -fsSL -o "$tmp/install.sh" "https://github.com/$LABNAS_REPO/releases/latest/download/install.sh"; then
+		if [[ -z "${url:-}" ]] || ! curl -fsSL -o "$tmp/install.sh" "$url"; then
 			warn "No se pudo bajar el install.sh de LabNAS"
 			srv_ok=0
 		# install.sh termina con error al mostrar la IP (usa hostname -I, que el de Arch no tiene)
 		# aunque ya dejó todo instalado: vale lo que quedó, no su código de salida.
-		elif ! sudo bash "$tmp/install.sh" --user "$USER" --dir "$LABNAS_SERVER" | sed 's/^/  /'; then
+		elif ! sudo bash "$tmp/install.sh" --user "$USER" --dir "$LABNAS_SERVER" --version "$tag" | sed 's/^/  /'; then
 			if [[ -x "$LABNAS_SERVER/labnas-backend" ]] && systemctl is-active -q labnas.service; then
 				ok "Servidor LabNAS activo (install.sh terminó con error después de instalarlo)"
 			else
