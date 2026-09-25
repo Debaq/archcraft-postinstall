@@ -160,8 +160,9 @@ sistema. No se actualiza sola: `10-apps` baja el release nuevo en cada corrida.
 - `WEBKIT_DISABLE_DMABUF_RENDERER=1`: evita la ventana en blanco de WebKitGTK en GPUs viejas.
 
 **LabNAS** (`apps/labnas.sh`): el equipo pasa a ser el servidor. El servidor va en `/opt/labnas`
-como servicio `labnas` (root, `http://<equipo>:3001`); se instala una vez y después se actualiza
-desde su web. El kiosko muestra la UI con `labnas-viewer` (`/opt/labnas-viewer`, pantalla completa
+como servicio `labnas` (`http://<equipo>:3001`), con la unidad del README de LabNAS: corre con el
+usuario del kiosko, no root (mpv suena en su sesión, la terminal web abre su shell, ve su home),
+con `CAP_NET_RAW` y `CAP_NET_BIND_SERVICE`. Se instala una vez y después se actualiza desde su web. El kiosko muestra la UI con `labnas-viewer` (`/opt/labnas-viewer`, pantalla completa
 por regla de Openbox), que se actualiza en cada corrida. El servicio sigue activo aunque después se
 elija otra app. Ojo: el kiosko desactiva `cups` y `avahi`, así que la impresión de documentos de
 LabNAS no anda sin reactivarlos.

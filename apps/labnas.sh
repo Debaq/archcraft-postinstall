@@ -1,5 +1,6 @@
 # LabNAS: servidor de laboratorio (archivos, impresoras 3D, streaming, tareas…) con web UI en :3001.
-# El equipo corre el servidor como servicio (root; se actualiza solo desde su web) y el kiosko
+# El equipo corre el servidor como servicio con el usuario del kiosko (no root: así mpv suena en su
+# sesión, la terminal web abre su shell y ve su home; se actualiza solo desde su web) y el kiosko
 # muestra la UI con labnas-viewer (WebKitGTK), que espera a que el servidor responda.
 
 APP_NAME=LabNAS
@@ -38,26 +39,37 @@ app_install() {
 		tar -xzf "$tmp/labnas.tar.gz" -C "$tmp"
 		[[ -x "$tmp/labnas/labnas-backend" ]] || { warn "El tar no trae labnas/labnas-backend"; rm -rf "$tmp"; return 1; }
 		sudo mv "$tmp/labnas" "$LABNAS_SERVER"
-		sudo chown -R root: "$LABNAS_SERVER"
 		rm -rf "$tmp"
 		ok "Servidor LabNAS $tag instalado en $LABNAS_SERVER"
 	fi
-	sys_write /etc/systemd/system/labnas.service <<-UNIT && sudo systemctl daemon-reload
+	# Del usuario: la auto-actualización reemplaza los archivos ahí
+	sudo chown -R "$USER:" "$LABNAS_SERVER"
+	# Unidad del README de LabNAS. Capacidades: ping del escáner de red y puerto 80.
+	if sys_write /etc/systemd/system/labnas.service <<-UNIT; then
 		[Unit]
-		Description=LabNAS Server
-		After=network.target
+		Description=LabNAS - NAS de Laboratorio
+		After=network-online.target
+		Wants=network-online.target
 
 		[Service]
 		Type=simple
+		User=$USER
 		ExecStart=$LABNAS_SERVER/labnas-backend
 		WorkingDirectory=$LABNAS_SERVER
-		Restart=always
+		Restart=on-failure
 		RestartSec=5
+		AmbientCapabilities=CAP_NET_RAW CAP_NET_BIND_SERVICE
 
 		[Install]
 		WantedBy=multi-user.target
 	UNIT
-	sudo systemctl enable --now -q labnas.service && ok "Servicio labnas activo (http://localhost:3001)"
+		sudo systemctl daemon-reload
+		sudo systemctl enable -q labnas.service
+		sudo systemctl restart labnas.service
+	else
+		sudo systemctl enable --now -q labnas.service
+	fi
+	ok "Servicio labnas activo como $USER (http://localhost:3001)"
 
 	# Visor: del release más nuevo que lo traiga
 	url=""
