@@ -10,7 +10,9 @@
   </theme>
   <desktops><number>1</number></desktops>
   <keyboard>
-    <!-- Sin atajos de menú ni terminal: con la app abierta el alumno no sale de ella -->
+    <!-- Sin atajos de menú ni terminal: con la app abierta el alumno no sale de ella.
+         Ctrl+Alt+W abre el Wi-Fi encima de la app, sin cerrarla. -->
+    <keybind key="C-A-w"><action name="Execute"><command>@KDIR@/wifi.sh</command></action></keybind>
     <keybind key="A-Tab"><action name="NextWindow"/></keybind>
     <keybind key="A-F4"><action name="Close"/></keybind>
     <keybind key="XF86PowerOff"><action name="Execute"><command>@KDIR@/apagar.sh poweroff</command></action></keybind>

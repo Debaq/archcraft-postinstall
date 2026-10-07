@@ -42,6 +42,7 @@ KEEP_PKGS=(
 	thunar thunar-volman thunar-archive-plugin xfce4-terminal atril nm-connection-editor
 	networkmanager "${AUDIO_PKGS[@]}"
 	xprintidle # relanzar.sh: reabre la app tras un rato sin uso
+	yad # wifi.sh: elegir la red Wi-Fi con el mouse (menú y Ctrl+Alt+W)
 	# Mantenimiento: git (el postinstall se actualiza con él), SSH y lo que usan los scripts.
 	# Explícitos para que "pacman -Rns" no se los lleve como dependencia de algo que se quita
 	# (git era dependencia de yay).
@@ -85,7 +86,7 @@ REMOVE_PKGS=(
 	# Restos del escritorio de Archcraft. Con pavucontrol y los applets se van solos gtk4 y los
 	# portales de xdg (~50 MB de RAM en la sesión)
 	blueman bluez-utils brltty pavucontrol xfce4-settings xsettingsd xfce-polkit ksuperkey xcolor maim
-	xdotool wmctrl wmname yad ueberzug highlight trash-cli mpc mplayer archcraft-vim archcraft-skeleton
+	xdotool wmctrl wmname ueberzug highlight trash-cli mpc mplayer archcraft-vim archcraft-skeleton
 	gtk-nocsd-git xdg-user-dirs-gtk reflector powertop man-pages unarchiver jasper
 	xorg-server-xephyr xorg-server-xnest xorg-xwayland xorg-docs xorg-x11perf archcraft-grub-theme
 )

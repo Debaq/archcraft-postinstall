@@ -36,7 +36,7 @@ cd archcraft-postinstall
 ```
 
 Primero pregunta **qué app abre el kiosko** (LabSim, Kutral, LabNAS o Web; se recuerda para las
-próximas corridas; con Web pregunta además la dirección de la página) y después la contraseña de `sudo`, **una sola vez**. Tarda unos minutos (descarga la
+próximas corridas; con Web pregunta además la dirección de la página y su nombre en el menú) y después la contraseña de `sudo`, **una sola vez**. Tarda unos minutos (descarga la
 app, ~180 MB). Al terminar, **reiniciar**: el equipo arranca directo en la app.
 
 Se puede volver a correr sin problema. Cada vez:
@@ -54,7 +54,7 @@ Se puede volver a correr sin problema. Cada vez:
 ./postinstall.sh --todo        # todos, aunque ya estén hechos
 ./postinstall.sh --elegir      # vuelve a preguntar la app del kiosko
 ./postinstall.sh --app=kutral  # cambia la app sin preguntar
-./postinstall.sh --app=web --url=https://turnos.ejemplo.cl  # app web con su dirección
+./postinstall.sh --app=web --url=https://turnos.ejemplo.cl --nombre=Turnos  # app web sin preguntar
 ./postinstall.sh kiosko        # solo 70-kiosko (siempre)
 ./postinstall.sh 10 70         # 10-apps y 70-kiosko (siempre)
 ```
@@ -89,11 +89,11 @@ lo corre al final (módulo `80-audio`).
   el menú de mantenimiento: LabSim, Archivos, Wi-Fi, Red (avanzado), Terminal, Reiniciar, Apagar.
   LabSim se reabre solo tras **5 minutos sin tocar teclado ni mouse** (`KIOSK_REOPEN_IDLE`), o
   al elegirlo en el menú.
-- **Wi-Fi:** lista las redes con su señal; doble clic, la clave y queda guardada (se reconecta
-  sola al prender). Usa `yad`, que solo instala la app web (arrastra WebKitGTK); con las otras
-  apps abre `nmtui` en la terminal.
+- **Wi-Fi:** `Ctrl+Alt+W` (encima de la app, sin cerrarla) o desde el menú. Lista las redes con
+  su señal; doble clic, la clave y queda guardada (se reconecta sola al prender). Usa `yad`
+  (arrastra WebKitGTK, ~100 MB de disco; no ocupa RAM mientras no se abre).
 - **Consola de mantenimiento:** `Ctrl+Alt+F2` (pide usuario y contraseña).
-- Con LabSim abierto no hay atajos para abrir otras cosas: el alumno no sale de LabSim.
+- Con LabSim abierto el único atajo es `Ctrl+Alt+W` (Wi-Fi, encima de la app): el alumno no sale de LabSim.
 
 LabSim se actualiza solo al abrir (queda en `/opt/LabSim`, a nombre del usuario, para que su
 actualizador pueda reemplazar archivos).
@@ -180,12 +180,17 @@ así que la impresión de documentos de LabNAS no anda sin reactivarlos.
 en modo kiosko, para un punto de atención. La dirección se pregunta al elegir la app o va con
 `--url=` (sin `https://` se agrega solo); queda en `~/.local/state/archcraft-postinstall/url` y
 `10-apps` la escribe en `/opt/web/url`. Para cambiarla: `./postinstall.sh --url=…` o `--elegir`.
+El nombre (menú del kiosko y acceso directo; `Web` si no se da otro) se pregunta junto con la
+dirección o va con `--nombre=` (letras, números, espacios y `. _ ( ) -`).
 
 - Perfil propio en `~/.config/kiosko-web` (sesión, cookies y logins de la página se conservan).
 - Al abrir sin red espera 20 s a que se conecte y, si no, abre el diálogo de Wi-Fi. Vale una red
   solo local (la página puede estar en un servidor del lugar).
 - Sin aviso de "restaurar páginas" tras un apagado brusco, sin traducción ni primera ejecución, y
   la página puede sonar sin que nadie la toque (avisos, llamados de turno).
+- Cámara y micrófono permitidos sin preguntar, solo para el sitio de la página (políticas en
+  `/etc/chromium/policies/managed/kiosko.json`). Si es `http://` (p. ej. un servidor del lugar por
+  IP) se trata como seguro: si no, Chromium no da cámara ni micrófono.
 - `Alt+F4` la cierra (salida normal): queda el menú de mantenimiento y se reabre tras
   `KIOSK_REOPEN_IDLE` s.
 

@@ -5,6 +5,7 @@
 #      ./postinstall.sh --elegir    vuelve a preguntar qué app abre el kiosko
 #      ./postinstall.sh --app=kutral elige la app sin preguntar (nombre de apps/)
 #      ./postinstall.sh --url=https://… dirección que abre la app web (apps/web.sh)
+#      ./postinstall.sh --nombre=Turnos nombre de la app web en el menú
 #      ./postinstall.sh 10 paquetes aplica solo los módulos que coincidan (siempre)
 # Antes de empezar se actualiza desde git. Si un módulo falla, sigue con el resto.
 set -euo pipefail
@@ -44,13 +45,14 @@ fi
 
 source "$ROOT/config.sh"
 
-todo=0 elegir=0 app="" url="" preguntar=0 filtros=()
+todo=0 elegir=0 app="" url="" nombre="" preguntar=0 filtros=()
 for a in "$@"; do
 	case "$a" in
 	--todo) todo=1 ;;
 	--elegir) elegir=1 ;;
 	--app=*) app="${a#--app=}" app="${app,,}" ;;
 	--url=*) url="${a#--url=}" ;;
+	--nombre=*) nombre="${a#--nombre=}" ;;
 	*) filtros+=("$a") ;;
 	esac
 done
@@ -87,13 +89,17 @@ elif ((elegir)) || [[ ! -s "$ESTADO/app" ]]; then
 		warn "Sin terminal para preguntar: la app del kiosko es $actual (--app=<nombre> para cambiarla)"
 	fi
 fi
-app_load
-# Configuración propia de la app (p. ej. la dirección de la app web): la pregunta app_setup
+# Configuración propia de la app (dirección y nombre de la app web): la pregunta app_setup
+if [[ -n "$nombre" ]]; then
+	[[ "$nombre" =~ ^[[:alnum:]\ ._()-]+$ ]] || { warn "--nombre: solo letras, números, espacios y . _ ( ) -"; exit 1; }
+	echo "$nombre" >"$ESTADO/nombre"
+fi
 if [[ -n "$url" ]]; then
 	[[ "$url" == *://* ]] || url="https://$url"
 	echo "$url" >"$ESTADO/url"
 	preguntar=0
 fi
+app_load
 if declare -F app_setup >/dev/null; then app_setup "$preguntar" || exit 1; fi
 # Lo que la app necesita del sistema también queda protegido al limpiar paquetes
 KEEP_PKGS+=("${APP_PKGS[@]}")
@@ -117,7 +123,11 @@ trap 'kill $keepalive 2>/dev/null || true; rm -f "${SUDO_ASKPASS:-}"' EXIT
 
 # Módulos ya aplicados: huella del módulo y de todo lo que usa (incluida la app elegida).
 # Si nada cambió, se salta. Los marcados "# postinstall: siempre" corren cada vez.
-comun="$(cat "$ROOT"/{lib.sh,config.sh,diag-audio.sh} "$ESTADO/app" $(find "$FILES" "$ROOT/apps" -type f | sort) | sha256sum)"
+# (url y nombre: configuración de la app web; el nombre va en el menú del kiosko)
+comun="$({
+	cat "$ROOT"/{lib.sh,config.sh,diag-audio.sh} "$ESTADO/app" $(find "$FILES" "$ROOT/apps" -type f | sort)
+	cat "$ESTADO"/{url,nombre} 2>/dev/null || true
+} | sha256sum)"
 huella() { { cat "$1"; echo "$comun"; } | sha256sum | cut -d' ' -f1; }
 
 aplicados=() sin_cambios=() fallidos=()

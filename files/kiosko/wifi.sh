@@ -1,8 +1,12 @@
 #!/bin/sh
-# Elegir y conectar una red Wi-Fi con el mouse (yad + nmcli). Lo abren el menú y la app web
-# cuando arranca sin red. Las redes quedan guardadas y se reconectan solas al prender.
-# Sin yad (solo lo instala la app web: arrastra WebKitGTK), abre nmtui en la terminal.
+# Elegir y conectar una red Wi-Fi con el mouse (yad + nmcli). Lo abren el menú, Ctrl+Alt+W
+# (encima de la app) y la app web cuando arranca sin red. Las redes quedan guardadas y se
+# reconectan solas al prender. Sin yad (no se corrió 60-paquetes), abre nmtui en la terminal.
 command -v yad >/dev/null || exec @TERM@ -e nmtui
+
+# Una sola ventana: si ya está abierta, no abre otra
+exec 8>"@KDIR@/.wifi.lock"
+flock -n 8 || exit 0
 
 titulo="Wi-Fi"
 error() { yad --title="$titulo" --center --no-markup --width=360 --image=dialog-error --text="$1" --button="Aceptar:0"; }
