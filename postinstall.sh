@@ -4,6 +4,7 @@
 #      ./postinstall.sh --todo      aplica todos, aunque ya estén hechos
 #      ./postinstall.sh --elegir    vuelve a preguntar qué app abre el kiosko
 #      ./postinstall.sh --app=kutral elige la app sin preguntar (nombre de apps/)
+#      ./postinstall.sh --url=https://… dirección que abre la app web (apps/web.sh)
 #      ./postinstall.sh 10 paquetes aplica solo los módulos que coincidan (siempre)
 # Antes de empezar se actualiza desde git. Si un módulo falla, sigue con el resto.
 set -euo pipefail
@@ -43,12 +44,13 @@ fi
 
 source "$ROOT/config.sh"
 
-todo=0 elegir=0 app="" filtros=()
+todo=0 elegir=0 app="" url="" preguntar=0 filtros=()
 for a in "$@"; do
 	case "$a" in
 	--todo) todo=1 ;;
 	--elegir) elegir=1 ;;
 	--app=*) app="${a#--app=}" app="${app,,}" ;;
+	--url=*) url="${a#--url=}" ;;
 	*) filtros+=("$a") ;;
 	esac
 done
@@ -79,12 +81,20 @@ elif ((elegir)) || [[ ! -s "$ESTADO/app" ]]; then
 			r="${r:-$def}"
 		done
 		echo "${apps[r - 1]}" >"$ESTADO/app"
+		preguntar=1 # recién elegida: que pregunte su configuración (app_setup)
 	else
 		echo "$actual" >"$ESTADO/app"
 		warn "Sin terminal para preguntar: la app del kiosko es $actual (--app=<nombre> para cambiarla)"
 	fi
 fi
 app_load
+# Configuración propia de la app (p. ej. la dirección de la app web): la pregunta app_setup
+if [[ -n "$url" ]]; then
+	[[ "$url" == *://* ]] || url="https://$url"
+	echo "$url" >"$ESTADO/url"
+	preguntar=0
+fi
+if declare -F app_setup >/dev/null; then app_setup "$preguntar" || exit 1; fi
 # Lo que la app necesita del sistema también queda protegido al limpiar paquetes
 KEEP_PKGS+=("${APP_PKGS[@]}")
 ok "App del kiosko: $APP_NAME"

@@ -4,7 +4,8 @@
     <item label="@APPNAME@"><action name="Execute"><command>@KDIR@/relanzar.sh</command></action></item>
     <separator/>
     <item label="Archivos"><action name="Execute"><command>thunar</command></action></item>
-    <item label="Red / Wi-Fi"><action name="Execute"><command>nm-connection-editor</command></action></item>
+    <item label="Wi-Fi"><action name="Execute"><command>@KDIR@/wifi.sh</command></action></item>
+    <item label="Red (avanzado)"><action name="Execute"><command>nm-connection-editor</command></action></item>
     <item label="Terminal"><action name="Execute"><command>@TERM@</command></action></item>
     <separator/>
     <item label="Reiniciar"><action name="Execute"><command>@KDIR@/apagar.sh reboot</command></action></item>

@@ -3,7 +3,7 @@
 Convierte una instalación normal de [Archcraft](https://archcraft.io) en un **kiosko liviano
 para equipos lentos** (2 GB de RAM o menos) que corre una sola app a pantalla completa:
 [LabSim](https://github.com/Debaq/LabSim), [Kütral](https://github.com/Debaq/kutral) o
-[LabNAS](https://github.com/Debaq/labnas).
+[LabNAS](https://github.com/Debaq/labnas) o una página web en Chromium (punto de atención).
 No hay que mantener una ISO propia: se instala Archcraft de fábrica y después se corre este script.
 
 Resultado medido en una VM con 2 GB de RAM:
@@ -35,8 +35,8 @@ cd archcraft-postinstall
 ./postinstall.sh
 ```
 
-Primero pregunta **qué app abre el kiosko** (LabSim, Kutral o LabNAS; se recuerda para las próximas
-corridas) y después la contraseña de `sudo`, **una sola vez**. Tarda unos minutos (descarga la
+Primero pregunta **qué app abre el kiosko** (LabSim, Kutral, LabNAS o Web; se recuerda para las
+próximas corridas; con Web pregunta además la dirección de la página) y después la contraseña de `sudo`, **una sola vez**. Tarda unos minutos (descarga la
 app, ~180 MB). Al terminar, **reiniciar**: el equipo arranca directo en la app.
 
 Se puede volver a correr sin problema. Cada vez:
@@ -54,6 +54,7 @@ Se puede volver a correr sin problema. Cada vez:
 ./postinstall.sh --todo        # todos, aunque ya estén hechos
 ./postinstall.sh --elegir      # vuelve a preguntar la app del kiosko
 ./postinstall.sh --app=kutral  # cambia la app sin preguntar
+./postinstall.sh --app=web --url=https://turnos.ejemplo.cl  # app web con su dirección
 ./postinstall.sh kiosko        # solo 70-kiosko (siempre)
 ./postinstall.sh 10 70         # 10-apps y 70-kiosko (siempre)
 ```
@@ -85,9 +86,12 @@ lo corre al final (módulo `80-audio`).
   equipo se apaga (espera hasta 15 s). Mantener el botón apretado fuerza el apagado.
 - **Si LabSim se cae,** se vuelve a abrir solo en unos segundos.
 - **Si un docente cierra LabSim** (salida normal), queda el fondo y con **clic derecho** aparece
-  el menú de mantenimiento: LabSim, Archivos, Red / Wi-Fi, Terminal, Reiniciar, Apagar.
+  el menú de mantenimiento: LabSim, Archivos, Wi-Fi, Red (avanzado), Terminal, Reiniciar, Apagar.
   LabSim se reabre solo tras **5 minutos sin tocar teclado ni mouse** (`KIOSK_REOPEN_IDLE`), o
   al elegirlo en el menú.
+- **Wi-Fi:** lista las redes con su señal; doble clic, la clave y queda guardada (se reconecta
+  sola al prender). Usa `yad`, que solo instala la app web (arrastra WebKitGTK); con las otras
+  apps abre `nmtui` en la terminal.
 - **Consola de mantenimiento:** `Ctrl+Alt+F2` (pide usuario y contraseña).
 - Con LabSim abierto no hay atajos para abrir otras cosas: el alumno no sale de LabSim.
 
@@ -144,6 +148,7 @@ Cada app es un archivo en [`apps/`](apps) que define:
 | `APP_PKGS` | Paquetes que necesita del sistema: se instalan y nunca se quitan. |
 | `APP_ENV` | Variables de entorno de la sesión kiosko. |
 | `APP_DIR` | Opcional: carpeta de la app (por defecto `/opt/<APP_NAME>`). |
+| `app_setup <preguntar>` | Opcional: preguntas propias de la app al elegirla (`preguntar` = 1 si recién se eligió o con `--elegir`). |
 | `APP_WINDOW` | Opcional: atributos de Openbox para reconocer su ventana (`title="…"`), si la app no se pone sola a pantalla completa. |
 | `app_install <dest>` | Instala o actualiza en `<dest>`, dejando `<dest>/run.sh`. |
 | `app_icon <dest>` | Ruta del ícono para el acceso directo. |
@@ -170,6 +175,19 @@ después se actualiza desde su web. El kiosko muestra la UI con `labnas-viewer` 
 checksum verificado, pantalla completa por regla de Openbox), que se actualiza en cada corrida. El
 servicio sigue activo aunque después se elija otra app. Ojo: el kiosko desactiva `cups` y `avahi`,
 así que la impresión de documentos de LabNAS no anda sin reactivarlos.
+
+**Web** (`apps/web.sh`): una página en Chromium (de los repos oficiales; se actualiza con pacman)
+en modo kiosko, para un punto de atención. La dirección se pregunta al elegir la app o va con
+`--url=` (sin `https://` se agrega solo); queda en `~/.local/state/archcraft-postinstall/url` y
+`10-apps` la escribe en `/opt/web/url`. Para cambiarla: `./postinstall.sh --url=…` o `--elegir`.
+
+- Perfil propio en `~/.config/kiosko-web` (sesión, cookies y logins de la página se conservan).
+- Al abrir sin red espera 20 s a que se conecte y, si no, abre el diálogo de Wi-Fi. Vale una red
+  solo local (la página puede estar en un servidor del lugar).
+- Sin aviso de "restaurar páginas" tras un apagado brusco, sin traducción ni primera ejecución, y
+  la página puede sonar sin que nadie la toque (avisos, llamados de turno).
+- `Alt+F4` la cierra (salida normal): queda el menú de mantenimiento y se reabre tras
+  `KIOSK_REOPEN_IDLE` s.
 
 Lo que cualquier app recibe del kiosko:
 

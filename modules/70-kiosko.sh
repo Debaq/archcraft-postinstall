@@ -19,7 +19,7 @@ fi
 # Config del kiosko (se regenera siempre)
 KDIR="$HOME/.config/kiosko"
 mkdir -p "$KDIR"
-cp "$FILES"/kiosko/{rc.xml,menu.xml,xinitrc,autostart,relanzar.sh,apagar.sh,login.sh} "$KDIR/"
+cp "$FILES"/kiosko/{rc.xml,menu.xml,xinitrc,autostart,relanzar.sh,apagar.sh,login.sh,wifi.sh} "$KDIR/"
 sed -i -e "s|@TERM@|$TERM_CMD|g" -e "s|@APP@|$APP_DIR/run.sh|g" -e "s|@KDIR@|$KDIR|g" "$KDIR"/*
 sed -i -e "s|@APPNAME@|$APP_NAME|g" -e "s|@APPPROC@|$APP_PROC|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" -e "s|@IDLE@|$KIOSK_REOPEN_IDLE|g" "$KDIR"/*
 printf "%s\n" "${APP_ENV[@]}" >"$KDIR/env"
@@ -27,7 +27,7 @@ printf "%s\n" "${APP_ENV[@]}" >"$KDIR/env"
 rule=""
 [[ -n "${APP_WINDOW:-}" ]] && rule="<applications><application $APP_WINDOW><decor>no</decor><fullscreen>yes</fullscreen></application></applications>"
 sed -i "s|@APPRULES@|$rule|" "$KDIR/rc.xml"
-chmod +x "$KDIR"/{xinitrc,autostart,relanzar.sh,apagar.sh}
+chmod +x "$KDIR"/{xinitrc,autostart,relanzar.sh,apagar.sh,wifi.sh}
 ok "Config en $KDIR (app: $APP_NAME, terminal: $TERM_CMD)"
 
 # El shell de login lanza X en tty1 (bash y zsh)
@@ -63,6 +63,15 @@ sys_write /etc/polkit-1/rules.d/49-kiosko-apagar.rules <<RULES && ok "Polkit: $U
 polkit.addRule(function(action, subject) {
 	if (subject.user == "$USER" &&
 	    /^org\.freedesktop\.login1\.(power-off|reboot)(-multiple-sessions|-ignore-inhibit)?\$/.test(action.id)) {
+		return polkit.Result.YES;
+	}
+});
+RULES
+# Conectar Wi-Fi (wifi.sh, Kütral) sin clave de administrador: el kiosko no tiene agente de polkit
+# que la pida, y las redes quedan guardadas para todo el sistema (se reconectan al prender)
+sys_write /etc/polkit-1/rules.d/49-kiosko-red.rules <<RULES && ok "Polkit: $USER puede conectar redes"
+polkit.addRule(function(action, subject) {
+	if (subject.user == "$USER" && action.id.indexOf("org.freedesktop.NetworkManager.") == 0) {
 		return polkit.Result.YES;
 	}
 });
