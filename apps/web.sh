@@ -63,14 +63,6 @@ app_install() {
 cd "$(dirname "$0")"
 url="$(cat url)"
 perfil="$HOME/.config/kiosko-web"
-wifi="$HOME/.config/kiosko/wifi.sh"
-
-# Sin red: espera a que se asocie (al arrancar tarda) y si no, ofrece elegir una Wi-Fi.
-# Vale cualquier red (también solo local: la página puede estar en un servidor del lugar).
-conectado() { case "$(nmcli -t -f STATE general 2>/dev/null)" in connected*) return 0 ;; esac; return 1; }
-i=0
-while ! conectado && [ $i -lt 20 ]; do sleep 1; i=$((i + 1)); done
-conectado || { [ -x "$wifi" ] && "$wifi"; }
 
 # Tras un apagado brusco Chromium ofrece "restaurar páginas": se marca la salida como normal
 prefs="$perfil/Default/Preferences"

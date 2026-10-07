@@ -21,7 +21,7 @@ KDIR="$HOME/.config/kiosko"
 mkdir -p "$KDIR"
 cp "$FILES"/kiosko/{rc.xml,menu.xml,xinitrc,autostart,relanzar.sh,apagar.sh,login.sh,wifi.sh} "$KDIR/"
 sed -i -e "s|@TERM@|$TERM_CMD|g" -e "s|@APP@|$APP_DIR/run.sh|g" -e "s|@KDIR@|$KDIR|g" "$KDIR"/*
-sed -i -e "s|@APPNAME@|$APP_NAME|g" -e "s|@APPPROC@|$APP_PROC|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" -e "s|@IDLE@|$KIOSK_REOPEN_IDLE|g" "$KDIR"/*
+sed -i -e "s|@APPNAME@|$APP_NAME|g" -e "s|@APPPROC@|$APP_PROC|g" -e "s|@VOLUME@|$KIOSK_VOLUME|g" -e "s|@IDLE@|$KIOSK_REOPEN_IDLE|g" -e "s|@NETWAIT@|$KIOSK_NET_WAIT|g" "$KDIR"/*
 printf "%s\n" "${APP_ENV[@]}" >"$KDIR/env"
 # Apps que no se ponen solas a pantalla completa: regla de Openbox por ventana (APP_WINDOW)
 rule=""

@@ -89,6 +89,8 @@ lo corre al final (módulo `80-audio`).
   el menú de mantenimiento: LabSim, Archivos, Wi-Fi, Red (avanzado), Terminal, Reiniciar, Apagar.
   LabSim se reabre solo tras **5 minutos sin tocar teclado ni mouse** (`KIOSK_REOPEN_IDLE`), o
   al elegirlo en el menú.
+- **Al prender sin red** (cualquier app): espera 20 s (`KIOSK_NET_WAIT`) a que se conecte y, si no,
+  abre el Wi-Fi antes de la app. Vale una red solo local.
 - **Wi-Fi:** `Ctrl+Alt+W` (encima de la app, sin cerrarla) o desde el menú. Lista las redes con
   su señal; doble clic, la clave y queda guardada (se reconecta sola al prender). Usa `yad`
   (arrastra WebKitGTK, ~100 MB de disco; no ocupa RAM mientras no se abre).
@@ -128,6 +130,7 @@ Todo lo ajustable está en [`config.sh`](config.sh):
 | `APP_DEFAULT` | App del kiosko si no se eligió otra (`labsim`); también es la opción por defecto del menú. |
 | `KIOSK_VOLUME` | Volumen del sistema al iniciar (%). |
 | `KIOSK_REOPEN_IDLE` | Segundos sin uso tras los que se reabre la app si el docente la cerró (300). |
+| `KIOSK_NET_WAIT` | Al prender sin red, segundos que espera conexión antes de abrir el Wi-Fi (20; 0 = no espera). |
 | `XKB_LAYOUT` | Distribución de teclado (`latam`). |
 | `KERNEL_PARAMS` / `KERNEL_PARAMS_REMOVE` | Parámetros de kernel que se agregan / quitan. |
 | `KEEP_PKGS` | Paquetes que el kiosko necesita (incluye git, herramientas de mantenimiento y todas las fuentes): se instalan, quedan explícitos y nunca se quitan, ni en cascada. |
@@ -184,8 +187,6 @@ El nombre (menú del kiosko y acceso directo; `Web` si no se da otro) se pregunt
 dirección o va con `--nombre=` (letras, números, espacios y `. _ ( ) -`).
 
 - Perfil propio en `~/.config/kiosko-web` (sesión, cookies y logins de la página se conservan).
-- Al abrir sin red espera 20 s a que se conecte y, si no, abre el diálogo de Wi-Fi. Vale una red
-  solo local (la página puede estar en un servidor del lugar).
 - Sin aviso de "restaurar páginas" tras un apagado brusco, sin traducción ni primera ejecución, y
   la página puede sonar sin que nadie la toque (avisos, llamados de turno).
 - Cámara y micrófono permitidos sin preguntar, solo para el sitio de la página (políticas en

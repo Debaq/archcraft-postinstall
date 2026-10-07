@@ -119,3 +119,7 @@ KIOSK_VOLUME=100
 # Si el docente cierra la app, se reabre sola tras estos segundos sin tocar teclado ni mouse
 # (mientras, queda el menú de mantenimiento con clic derecho).
 KIOSK_REOPEN_IDLE=300
+
+# Al prender sin red, espera estos segundos a que se conecte (el Wi-Fi tarda en asociarse) y si
+# no, abre el diálogo de Wi-Fi antes de la app. Vale cualquier red, también solo local. 0: no espera.
+KIOSK_NET_WAIT=20

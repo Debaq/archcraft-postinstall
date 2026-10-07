@@ -6,4 +6,5 @@
 		sleep 1
 	done
 ) &
-"@KDIR@/relanzar.sh" &
+# Sin red, primero el Wi-Fi (wifi.sh --sin-red) y después la app
+( "@KDIR@/wifi.sh" --sin-red; "@KDIR@/relanzar.sh" ) &
