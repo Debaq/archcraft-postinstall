@@ -67,6 +67,15 @@ polkit.addRule(function(action, subject) {
 	}
 });
 RULES
+# Botón de encendido: lo atiende solo Openbox (XF86PowerOff → apagar.sh, que cierra la app y espera).
+# Si logind también lo atiende (HandlePowerKey=poweroff, el de fábrica) apaga en paralelo: systemd
+# baja X junto con la app, que no alcanza a guardar ni a marcar la salida, y al prender reporta un
+# "cierre inesperado" que no fue (tickets 44-48 de LabSim). Mantenerlo apretado sigue forzando.
+# logind relee su config con SIGHUP; reiniciarlo cerraría la sesión del kiosko.
+sys_write /etc/systemd/logind.conf.d/kiosko-boton.conf <<'CONF' && { sudo systemctl kill -s HUP systemd-logind; ok "Botón de encendido: apagado ordenado (apagar.sh)"; }
+[Login]
+HandlePowerKey=ignore
+CONF
 # Conectar Wi-Fi (wifi.sh, Kütral) sin clave de administrador: el kiosko no tiene agente de polkit
 # que la pida, y las redes quedan guardadas para todo el sistema (se reconectan al prender)
 sys_write /etc/polkit-1/rules.d/49-kiosko-red.rules <<RULES && ok "Polkit: $USER puede conectar redes"
