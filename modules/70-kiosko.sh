@@ -77,5 +77,17 @@ polkit.addRule(function(action, subject) {
 });
 RULES
 
+# Controlador LabSim (STM32, VID:PID 0483:5740): LabSim lo lee directo de /dev/input y lo toma en
+# exclusiva, así sus teclas van al audiómetro o al impedanciómetro aunque el foco esté en un campo
+# de texto (antes se escribían ahí y la consola física no respondía). uaccess da el acceso al usuario
+# de la sesión activa (la regla va antes de 73-seat-late); el grupo input queda de respaldo.
+sys_write /etc/udev/rules.d/70-labsim-controlador.rules <<'RULES' && { sudo udevadm control --reload; sudo udevadm trigger --subsystem-match=input; ok "Controlador LabSim: lo lee la app directo"; }
+SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE="0660", GROUP="input", TAG+="uaccess"
+RULES
+if ! id -nG "$USER" | grep -qw input; then
+	sudo usermod -aG input "$USER"
+	ok "$USER en el grupo input (aplica al reiniciar)"
+fi
+
 sudo systemctl daemon-reload
 ok "Kiosko listo"

@@ -96,6 +96,8 @@ lo corre al final (módulo `80-audio`).
   (arrastra WebKitGTK, ~100 MB de disco; no ocupa RAM mientras no se abre).
 - **Consola de mantenimiento:** `Ctrl+Alt+F2` (pide usuario y contraseña).
 - Con LabSim abierto el único atajo es `Ctrl+Alt+W` (Wi-Fi, encima de la app): el alumno no sale de LabSim.
+- **Controlador LabSim** (USB 0483:5740): LabSim lo lee directo (regla udev
+  `70-labsim-controlador.rules`) y sus teclas van siempre al equipo abierto, tenga el foco quien lo tenga.
 
 LabSim se actualiza solo al abrir (queda en `/opt/LabSim`, a nombre del usuario, para que su
 actualizador pueda reemplazar archivos).
