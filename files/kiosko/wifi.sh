@@ -1,25 +1,39 @@
 #!/bin/sh
 # Elegir y conectar una red Wi-Fi con el mouse (yad + nmcli). Lo abren el menú, Ctrl+Alt+W
 # (encima de la app) y el inicio de la sesión con --sin-red: espera @NETWAIT@ s a que haya red
-# y solo se abre si sigue sin haber. Las redes quedan guardadas y se reconectan solas al
-# prender. Sin yad (no se corrió 60-paquetes), abre nmtui en la terminal.
-command -v yad >/dev/null || exec @TERM@ -e nmtui
+# y solo se abre si sigue sin haber y el equipo tiene Wi-Fi (con solo cable no serviría de nada).
+# Las redes quedan guardadas y se reconectan solas al prender. Sin yad (no se corrió
+# 60-paquetes), abre nmtui en la terminal.
 
 # Una sola ventana: si ya está abierta, no abre otra
 exec 8>"@KDIR@/.wifi.lock"
 flock -n 8 || exit 0
 
+# Alguna tarjeta Wi-Fi (wifi-p2p no cuenta)
+hay_wifi() { nmcli -t -f TYPE device 2>/dev/null | grep -qx wifi; }
+
 if [ "$1" = --sin-red ]; then
 	[ @NETWAIT@ -gt 0 ] || exit 0
-	# Cualquier red (también solo local: la app puede usar un servidor del lugar)
+	# Cualquier red: Wi-Fi o cable, también solo local (la app puede usar un servidor del lugar)
 	conectado() { case "$(nmcli -t -f STATE general 2>/dev/null)" in connected*) return 0 ;; esac; return 1; }
 	i=0
 	while ! conectado && [ $i -lt @NETWAIT@ ]; do sleep 1; i=$((i + 1)); done
 	conectado && exit 0
+	# Sin tarjeta Wi-Fi (equipo solo con cable, desenchufado): sigue directo a la app
+	hay_wifi || exit 0
 fi
+
+# (8>&-: la terminal no se queda con el candado)
+command -v yad >/dev/null || exec @TERM@ -e nmtui 8>&-
 
 titulo="Wi-Fi"
 error() { yad --title="$titulo" --center --no-markup --width=360 --image=dialog-error --text="$1" --button="Aceptar:0"; }
+
+# Abierto desde el menú o Ctrl+Alt+W en un equipo sin Wi-Fi: lo dice en vez de una lista vacía
+if ! hay_wifi; then
+	error "Este equipo no tiene Wi-Fi.\n\nPara la red por cable: menú (clic derecho en el fondo) → Red (avanzado)."
+	exit 0
+fi
 
 # Conecta mostrando un aviso mientras tanto; deja la salida de nmcli en $salida
 con_aviso() {
